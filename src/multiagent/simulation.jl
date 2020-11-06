@@ -5,6 +5,9 @@ mutable struct FMP_Agent <: AbstractAgent
     pos::NTuple{2, Float64}
     vel::NTuple{2, Float64}
     tau::NTuple{2, Float64}
+    color::String
+    type::Symbol
+    radius::Float64
     # NOTE: if you change anything in this you need to restart the REPL
     # (I think it is the precompilation step)
 end
@@ -12,15 +15,16 @@ end
 # initialize model
 function FMP_Model(; 
                    rho = 7.5e6,
-                   r = 1,
                    dt = 0.01,
-                   num_agents = 50,
+                   num_agents = 20,
                    SS_dims = (1,1),
                    num_steps = 100,
                    terminal_max_dis = 0.01,
-                   c1 = 1,
-                   c2 = 1,
-                   vmax = 0.2,
+                   c1 = 10,
+                   c2 = 10,
+                   vmax = 10,
+                   d = 0.01,
+                   r = (3*vmax^2/(2*rho))^(1/3)+d,
                   )
 
     # define AgentBasedModel (ABM)
@@ -37,7 +41,7 @@ function FMP_Model(;
     
     space2d = ContinuousSpace(2; periodic=true, extend=SS_dims)
     model = ABM(FMP_Agent, space2d, properties=properties)
-    InitAgentPositions(model, num_agents)
+    AgentPositionInit(model, num_agents; type="line")
     
     index!(model)
     return model
@@ -51,7 +55,7 @@ function FMP_Simulation()
     model = FMP_Model()
     agent_step!(agent, model) = move_agent!(agent, model, model.dt)
 
-    e = model.space.extend  # this gives dimensions of model space I think
+    e = model.space.extend
     num_steps = model.num_steps
 
     p = Progress(round(Int,num_steps/2))
@@ -61,33 +65,22 @@ function FMP_Simulation()
 
         p1 = plotabm(
             model,
-            as = 4,
+            as = PlotABM_RadiusUtil,
+            ac = PlotABM_ColorUtil,
+            am = PlotABM_ShapeUtil,
             #showaxis = false,
-            #grid = false,
+            grid = false,
             xlims = (0, e[1]),
             ylims = (0, e[1]),
         )
 
-        title!(p1, "step $(i)")
+        title!(p1, "FMP Simulation (step $(i))")
         step!(model, agent_step!, 2)
         next!(p)
     end
-    gif(anim, "output/socialdist1.gif", fps = 25)
+    gif(anim, "output/simresult.gif", fps = 25)
 
 end
 
-function InitAgentPositions(model, num_agents)
-
-    Random.seed!(42)
-    for ind in 1:num_agents
-        pos = Tuple(rand(2))
-        vel = Tuple(rand(2))
-        tau = Tuple(rand(2))
-        add_agent!(pos, model, vel, tau)
-    end
-
-    return model
-
-end
 
 

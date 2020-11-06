@@ -41,6 +41,8 @@ function UpdateVelocity(model, i, Ni, agents)
 end
 
 function RepulsiveForce(model, agents, i, Ni)
+    # compute repulsive force for each agent
+    # not the "." before most math operations, required for component wise tuple math
     f = ntuple(i->0, length(agents[i].vel))
     for j in Ni
         dist = norm(agents[j].pos .- agents[i].pos)
@@ -54,11 +56,15 @@ function RepulsiveForce(model, agents, i, Ni)
 end
 
 function NavigationalFeedback(model, agents, i)
-    f = -model.c1 .* (agents[i].pos .- agents[i].tau) .- model.c2 .* agents[i].vel
+    # compute navigational force for each agent
+    # not the "." before most math operations, required for component wise tuple math
+    f = (-model.c1 .* (agents[i].pos .- agents[i].tau)) .+ (- model.c2 .* agents[i].vel)
     return f
 end
 
 function CapVelocity(vmax, vel)
+    # bound velocity by vmax
+    # not the "." before most math operations, required for component wise tuple math
     if norm(vel) > vmax
         vi = (vel ./ norm(vel)) .* vmax
         return vi
