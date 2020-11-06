@@ -1,4 +1,4 @@
-#Wrapper function fot the Agents.jl module
+# demo function for how to render 
 # Implementation inspired by 
 #   https://github.com/JuliaDynamics/Agents.jl/blob/master/examples/social_distancing.jl
 
@@ -12,15 +12,14 @@ mutable struct Agent <: AbstractAgent
 end
 
 
-function model_space(; speed=0.002)
+function demo1_model_space(; speed=0.002)
 
     # initialize state space
     space2d = ContinuousSpace(2; periodic=true, extend=(1,1))
-    #Agent(id, pos, vel; mass, happy) = Agent(id, pos, vel, mass, happy)
-    model = ABM(Agent, space2d, properties = Dict(:dt=>1.0, :rho=>7.5e6, :r=>10))
+    model = ABM(Agent, space2d, properties = Dict(:dt=>1.0))
 
     # add agents
-    num_agents = 1000
+    num_agents = 100
     radius = 0.001
     for ind in 1:num_agents
         thetap = ind*2*3.1415/num_agents
@@ -31,8 +30,8 @@ function model_space(; speed=0.002)
         x = ind/num_agents*e[1]
         y = ind/num_agents*e[2]
         pos = Tuple((x,y))
-        #vel = sincos(2π*rand()).*(speed)
-        vel = Tuple((-speed, speed))
+        vel = sincos(2π*rand()).*(speed)
+        #vel = Tuple((-speed, speed))
         add_agent!(pos, model, vel, 1.0)
     end
 
@@ -40,11 +39,11 @@ function model_space(; speed=0.002)
     return model
 end
 
-function create_gif()
+function demo1_create_gif()
     gr()
     cd(@__DIR__)
 
-    model = model_space()
+    model = demo1_model_space()
     agent_step!(agent, model) = move_agent!(agent, model, model.dt)
     nothing
 
@@ -66,10 +65,6 @@ function create_gif()
         step!(model, agent_step!, 2)
         next!(p)
     end
-    gif(anim, "output/socialdist1.gif", fps = 25)
+    gif(anim, "socialdist1.gif", fps = 25)
 end
 
-
-function stuff()
-    println(" test")
-end

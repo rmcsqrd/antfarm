@@ -1,14 +1,10 @@
 module antfarm
-
-## external dependencies
-import Agents
-import Random
-import AgentsPlots
-import Plots
-
+using Revise
 
 ## internal
-include("multiagent/wrapper.jl")
+
+include("multiagent/simulation.jl")
+include("fmp/fmp.jl")
 
 
 end # module
