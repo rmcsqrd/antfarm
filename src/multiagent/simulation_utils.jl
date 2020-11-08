@@ -1,7 +1,7 @@
 using Colors
 
 function PlotABM_ColorUtil(a)
-    if a.type == :A
+    if a.type == :A || a.type == :O
         return a.color
     else
         return "#ffffff"
@@ -23,7 +23,7 @@ function PlotABM_ShapeUtil(a)
 end
 
 function PlotABM_RadiusUtil(a)
-    return a.radius * 4
+    return a.radius * 200  # this is for display purposes only
 end
 
 function AgentInitColor(i, num_agents)
