@@ -3,6 +3,7 @@ Force-based motion planning algorithm with RL navigational feedback. Implementat
 
 ![CircleSwap](https://github.com/rmcsqrd/antfarm/blob/master/aux/simresult.gif)
 
+![movingline](https://github.com/rmcsqrd/antfarm/blob/master/aux/simresult_movingline.gif)
 ### Usage
 ```
     $ cd path/to/your/directory
