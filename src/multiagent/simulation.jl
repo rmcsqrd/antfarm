@@ -12,14 +12,16 @@ mutable struct FMP_Agent <: AbstractAgent
     # (I think it is the precompilation step)
 end
 
-# initialize model
-function FMP_Model(; 
+"""
+Initialization function for FMP simulation. Contains all model parameters.
+"""
+function FMP_Model(simtype;
                    rho = 7.5e6,
                    rho_obstacle = 7.5e6,
                    dt = 0.01,
                    num_agents = 50,
                    SS_dims = (1,1),
-                   num_steps = 2000,
+                   num_steps = 200,
                    terminal_max_dis = 0.01,
                    c1 = 10,
                    c2 = 10,
@@ -45,7 +47,7 @@ function FMP_Model(;
     
     space2d = ContinuousSpace(2; periodic=true, extend=SS_dims)
     model = ABM(FMP_Agent, space2d, properties=properties)
-    AgentPositionInit(model, num_agents; type="circle")
+    AgentPositionInit(model, num_agents; type=simtype)
 
     # append obstacles into obstacle_list
     for agent in allagents(model)
@@ -59,11 +61,20 @@ function FMP_Model(;
 
 end
 
-function FMP_Simulation()
+"""
+Simulation wrapper for FMP simulations. 
+
+Initializes model based on "type" parameter which dictates type of simulation to perform. Different simulation descriptions can be found in `/multiagent/simulation_init.jl`.
+
+Next it loops through the number of simulation steps (specified in model params) and create simulation display using `plotabm()`.
+
+Finished by saving at the location specified by `outputpath` variable. 
+"""
+function FMP_Simulation(simtype::String; outputpath = "output/simresult.gif")
     gr()
     cd(@__DIR__)
     
-    model = FMP_Model()
+    model = FMP_Model(simtype)
     agent_step!(agent, model) = move_agent!(agent, model, model.dt)
 
     e = model.space.extend
@@ -88,7 +99,7 @@ function FMP_Simulation()
         step!(model, agent_step!, 2)
         next!(p)
     end
-    gif(anim, "output/simresult.gif", fps = 25)
+    gif(anim, outputpath, fps = 25)
 
 end
 

@@ -1,6 +1,9 @@
 using Colors
 
-function PlotABM_ColorUtil(a)
+"""
+This function is a utility function that takes an agent and overwrites its color if it is of type :T (target) and gives it a grey color for display purposes.
+"""
+function PlotABM_ColorUtil(a::AbstractAgent)
     if a.type == :A || a.type == :O
         return a.color
     else
@@ -8,7 +11,10 @@ function PlotABM_ColorUtil(a)
     end
 end
 
-function PlotABM_ShapeUtil(a)
+"""
+This function is a utility function for assigning agent display type based on agent type.
+"""
+function PlotABM_ShapeUtil(a::AbstractAgent)
     # potential options here:
     # https://gr-framework.org/julia-gr.html (search for "marker type")
     if a.type == :A
@@ -22,10 +28,16 @@ function PlotABM_ShapeUtil(a)
     end
 end
 
-function PlotABM_RadiusUtil(a)
+"""
+This function is a utility function for setting agent plot size - note that this is for display purposes only and does not impact calculations involving agent radius. 
+"""
+function PlotABM_RadiusUtil(a::AbstractAgent)
     return a.radius * 200  # this is for display purposes only
 end
 
+"""
+This function is a utility function for coloring agents.
+"""
 function AgentInitColor(i, num_agents)
     color_range = range(HSV(0,1,1), stop=HSV(-360,1,1), length=num_agents)
     agent_color = color_range[i]

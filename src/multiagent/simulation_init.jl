@@ -1,5 +1,5 @@
 """
-Wrapper function for generating agent positions. Different position functions share common inputs:
+Wrapper function for generating agent and object positions/targets. Different position functions share common inputs:
 
 type = type of agent
     :A = agent (has velocity, subject to repulsive forces)
@@ -24,6 +24,9 @@ function AgentPositionInit(model, num_agents; type="random")
     end
 end
 
+"""
+Simulation where agents start on one side of the state space and move in a vertical line from left to right.
+"""
 function LinePositions(model, num_agents)
 
     x, y = model.space.extend
@@ -44,6 +47,9 @@ function LinePositions(model, num_agents)
 
 end
 
+"""
+Simulation with unmoving vertical line of agents in middle of state space. A moving object is moving from left to right through line of agents. Agents must move around object and attempt to reorient themselves in the vertical line.
+"""
 function CenteredLineObject(model, num_agents)
     
     x, y = model.space.extend
@@ -74,7 +80,9 @@ function CenteredLineObject(model, num_agents)
 
 end
 
-
+"""
+Simulation similar to "Line Positions" with object in middle of state space that agents must navigate around.
+"""
 function CenteredObjectMovingLine(model, num_agents)
     
     x, y = model.space.extend
@@ -105,6 +113,9 @@ function CenteredObjectMovingLine(model, num_agents)
 
 end
 
+"""
+Agents start around the perimeter of a circle and attempt to move to a position on the opposite side of the circle - all agents end up driving towards the center.
+"""
 function CirclePositions(model, num_agents)
 
     # determine circle params
@@ -138,6 +149,9 @@ function CirclePositions(model, num_agents)
 
 end
 
+"""
+Agents start in random positions with random velocities and seek a random target position.
+"""
 function RandomPositions(model, num_agents)
     Random.seed!(42)
     for i in 1:num_agents
