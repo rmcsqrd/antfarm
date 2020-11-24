@@ -1,5 +1,6 @@
 module antfarm
 using Revise
+using Debugger
 
 ## internal
 

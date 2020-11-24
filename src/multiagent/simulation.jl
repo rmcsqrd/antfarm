@@ -8,6 +8,7 @@ mutable struct FMP_Agent <: AbstractAgent
     color::String
     type::Symbol
     radius::Float64
+    SSdims::NTuple{2, Float64}  # include this for plotting
     # NOTE: if you change anything in this you need to restart the REPL
     # (I think it is the precompilation step)
 end
@@ -19,14 +20,14 @@ function FMP_Model(simtype;
                    rho = 7.5e6,
                    rho_obstacle = 7.5e6,
                    dt = 0.01,
-                   num_agents = 50,
-                   SS_dims = (1,1),
-                   num_steps = 200,
+                   num_agents = 500,
+                   SS_dims = (2,2),  # x,y should be equal for proper plot scaling
+                   num_steps = 100,
                    terminal_max_dis = 0.01,
                    c1 = 10,
                    c2 = 10,
                    vmax = 0.1,
-                   d = 0.01,
+                   d = 0.01, # useful to set to radius of agents
                    r = (3*vmax^2/(2*rho))^(1/3)+d,
                    obstacle_list = [],
                   )
@@ -35,6 +36,7 @@ function FMP_Model(simtype;
     properties = Dict(:rho=>rho,
                       :rho_obstacle=>rho_obstacle,
                       :r=>r,
+                      :d=>d,
                       :dt=>dt,
                       :num_agents=>num_agents,
                       :num_steps=>num_steps,
@@ -66,6 +68,14 @@ Simulation wrapper for FMP simulations.
 
 Initializes model based on "type" parameter which dictates type of simulation to perform. Different simulation descriptions can be found in `/multiagent/simulation_init.jl`.
 
+Possible inputs include:
+- `circle` have agents move/swap places around perimeter of a circle
+- `circle_object` have agents move/swap places around perimeter of a circle with an object in the middle
+- `line` have agents move left to right in vertical line
+- `centered_line_object` have agents remain stationary in vertical line and an object move through them
+- `moving_line` have agents move left to right in vertical line past an object
+- `random` have agents start in random positions with random velocities
+
 Next it loops through the number of simulation steps (specified in model params) and create simulation display using `plotabm()`.
 
 Finished by saving at the location specified by `outputpath` variable. 
@@ -93,13 +103,14 @@ function FMP_Simulation(simtype::String; outputpath = "output/simresult.gif")
             grid = false,
             xlims = (0, e[1]),
             ylims = (0, e[2]),
+            aspect_ratio=:equal,
         )
 
         title!(p1, "FMP Simulation (step $(i))")
         step!(model, agent_step!, 2)
         next!(p)
     end
-    gif(anim, outputpath, fps = 25)
+    gif(anim, outputpath, fps = 100)
 
 end
 

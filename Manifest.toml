@@ -101,9 +101,14 @@ version = "0.3.4+0"
 
 [[Contour]]
 deps = ["StaticArrays"]
-git-tree-sha1 = "d05a3a25b762720d40246d5bedf518c9c2614ef5"
+git-tree-sha1 = "0d128f9c2d9560349dc46f60c42036e244271d72"
 uuid = "d38c429a-6771-53c6-b99e-75d170b6e991"
-version = "0.5.5"
+version = "0.5.6"
+
+[[Crayons]]
+git-tree-sha1 = "3f71217b538d7aaee0b69ab47d9b7724ca8afa0d"
+uuid = "a8cc5b0e-0ffa-5ad4-8c14-923d3ee1735f"
+version = "4.0.4"
 
 [[DBInterface]]
 git-tree-sha1 = "7f678ccd98aef9d8462f79a6ba67bf263a67d27a"
@@ -136,6 +141,12 @@ version = "1.0.0"
 deps = ["Printf"]
 uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
 
+[[Debugger]]
+deps = ["CodeTracking", "Crayons", "Highlights", "InteractiveUtils", "JuliaInterpreter", "Markdown", "REPL"]
+git-tree-sha1 = "c37eca3eff2657c700f32e05500215feac886dcf"
+uuid = "31a5f54b-26ea-5ae9-a837-f05ce5417438"
+version = "0.6.6"
+
 [[DelimitedFiles]]
 deps = ["Mmap"]
 uuid = "8bb1440f-4735-579b-a4ab-409b98df4dab"
@@ -149,6 +160,12 @@ deps = ["FillArrays", "LinearAlgebra", "PDMats", "Printf", "QuadGK", "Random", "
 git-tree-sha1 = "3676697fd903ba314aaaa0ec8d6813b354edb875"
 uuid = "31c24e10-a181-5473-b8eb-7969acd0382f"
 version = "0.23.11"
+
+[[DocStringExtensions]]
+deps = ["LibGit2", "Markdown", "Pkg", "Test"]
+git-tree-sha1 = "50ddf44c53698f5e784bbebb3f4b21c5807401b1"
+uuid = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
+version = "0.8.3"
 
 [[FFMPEG]]
 deps = ["FFMPEG_jll", "x264_jll"]
@@ -227,6 +244,12 @@ deps = ["Base64", "Dates", "IniFile", "MbedTLS", "Sockets"]
 git-tree-sha1 = "c7ec02c4c6a039a98a15f955462cd7aea5df4508"
 uuid = "cd3eb016-35fb-5094-929b-558a96fad6f3"
 version = "0.8.19"
+
+[[Highlights]]
+deps = ["DocStringExtensions", "InteractiveUtils", "REPL"]
+git-tree-sha1 = "f823a2d04fb233d52812c8024a6d46d9581904a4"
+uuid = "eafb193a-b7ab-5a9e-9068-77385905fa72"
+version = "0.4.5"
 
 [[Inflate]]
 git-tree-sha1 = "f5fc07d4e706b84f72d54eedcc1c13d92fb0871c"
@@ -356,9 +379,9 @@ version = "0.4.4"
 uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 
 [[NaNMath]]
-git-tree-sha1 = "c84c576296d0e2fbb3fc134d3e09086b3ea617cd"
+git-tree-sha1 = "bfe47e760d60b82b66b61d2d44128b62e3a369fb"
 uuid = "77ba4419-2d1f-58cd-9bb1-8ffee604a2e3"
-version = "0.3.4"
+version = "0.3.5"
 
 [[NetworkLayout]]
 deps = ["DelimitedFiles", "GeometryTypes", "LinearAlgebra", "SparseArrays", "Test"]
@@ -409,9 +432,9 @@ version = "0.10.1"
 
 [[Parsers]]
 deps = ["Dates"]
-git-tree-sha1 = "6fa4202675c05ba0f8268a6ddf07606350eda3ce"
+git-tree-sha1 = "b417be52e8be24e916e34b3d70ec2da7bdf56a68"
 uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
-version = "1.0.11"
+version = "1.0.12"
 
 [[Pkg]]
 deps = ["Dates", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "Test", "UUIDs"]
@@ -471,9 +494,9 @@ uuid = "c84ed2f1-dad5-54f0-aa8e-dbefe2724439"
 version = "0.4.0"
 
 [[RecipesBase]]
-git-tree-sha1 = "6ee6c35fe69e79e17c455a386c1ccdc66d9f7da4"
+git-tree-sha1 = "b3fb709f3c97bfc6e948be68beeecb55a0b340ae"
 uuid = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
-version = "1.1.0"
+version = "1.1.1"
 
 [[RecipesPipeline]]
 deps = ["Dates", "NaNMath", "PlotUtils", "RecipesBase"]
@@ -489,9 +512,9 @@ version = "0.2.0"
 
 [[Requires]]
 deps = ["UUIDs"]
-git-tree-sha1 = "28faf1c963ca1dc3ec87f166d92982e3c4a1f66d"
+git-tree-sha1 = "e05c53ebc86933601d36212a93b39144a2733493"
 uuid = "ae029012-a4dd-5104-9daa-d747884805df"
-version = "1.1.0"
+version = "1.1.1"
 
 [[Revise]]
 deps = ["CodeTracking", "Distributed", "FileWatching", "JuliaInterpreter", "LibGit2", "LoweredCodeUtils", "OrderedCollections", "Pkg", "REPL", "UUIDs", "Unicode"]
@@ -582,9 +605,9 @@ version = "0.33.2"
 
 [[StatsFuns]]
 deps = ["Rmath", "SpecialFunctions"]
-git-tree-sha1 = "04a5a8e6ab87966b43f247920eab053fd5fdc925"
+git-tree-sha1 = "3b9f665c70712af3264b61c27a7e1d62055dafd1"
 uuid = "4c63d2b9-4356-54db-8cca-17b64c39e42c"
-version = "0.9.5"
+version = "0.9.6"
 
 [[StructArrays]]
 deps = ["Adapt", "DataAPI", "Tables"]
@@ -610,9 +633,9 @@ version = "1.0.0"
 
 [[Tables]]
 deps = ["DataAPI", "DataValueInterfaces", "IteratorInterfaceExtensions", "LinearAlgebra", "TableTraits", "Test"]
-git-tree-sha1 = "24a584cf65e2cfabdadc21694fb69d2e74c82b44"
+git-tree-sha1 = "5131a624173d532299d1c7eb05341c18112b21b8"
 uuid = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
-version = "1.1.0"
+version = "1.2.1"
 
 [[Test]]
 deps = ["Distributed", "InteractiveUtils", "Logging", "Random"]

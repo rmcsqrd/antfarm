@@ -32,7 +32,22 @@ end
 This function is a utility function for setting agent plot size - note that this is for display purposes only and does not impact calculations involving agent radius. 
 """
 function PlotABM_RadiusUtil(a::AbstractAgent)
-    return a.radius * 200  # this is for display purposes only
+    # this is for display purposes only and does not impact FMP algorithm results
+    # the scaling values are empirically selected
+    # the object scale is based on the agent scaling
+    
+    # 190 appears to be scaling factor for plotting
+    #   ex, an agent/object with radius=1 place in center of SS
+    #   would take up the entire state space
+
+    SS_scale = 190*minimum(a.SSdims)
+    
+
+    if a.type == :O
+        return a.radius*SS_scale
+    else
+        return a.radius*SS_scale
+    end
 end
 
 """

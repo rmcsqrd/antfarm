@@ -31,7 +31,6 @@ function FMP(model::AgentBasedModel)
     # loop through agents and update velocities
     for i in keys(agents)
         Ni = findall(x->x==1, interaction_array[i, :])
-        
         # move_this_agent_to_new_position(i) in FMP paper
         UpdateVelocity(model, i, Ni, agents)
     end
@@ -112,7 +111,7 @@ function ObstactleFeedback(model::AgentBasedModel, agents, i)
 
     for id in model.obstacle_list
         dist = norm(agents[id].pos  .- agents[i].pos)
-        if dist < agents[id].radius/2
+        if dist < agents[id].radius/2+agents[i].radius/2  #bone why was this /2?
             force = -model.rho_obstacle * (dist - agents[id].radius)^2
             distnorm = (agents[id].pos .- agents[i].pos) ./ norm(agents[id].pos .- agents[i].pos)
             f = f .+ (force .* distnorm)
