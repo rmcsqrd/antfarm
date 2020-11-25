@@ -1,7 +1,6 @@
 ### TODO
 
 #### Package functionality 
-- look at model.scheduler to schedule how things are drawn to avoid overlap?
 
 #### Algorithm functionality
 - figure out how to properly implement the object avoidance term pj-rj-pi

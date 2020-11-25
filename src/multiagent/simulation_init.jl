@@ -22,6 +22,7 @@ function AgentPositionInit(model, num_agents; type="random")
     elseif type == "random"
         return RandomPositions(model, num_agents)
     else
+        @warn "Invalid simulation type; simulating random"
         return RandomPositions(model, num_agents)  # return random anyways
     end
 end
@@ -177,7 +178,7 @@ function CirclePositionsObject(model, num_agents)
         tau = (xitau, yitau)  # goal is on opposite side of circle
         #tau = (x/2,y/2)
         type = :A
-        radius = 0.02
+        radius = model.d
         color = AgentInitColor(i, num_agents)
         add_agent!(pos, model, vel, tau, color, :A, radius, model.space.extend)
         add_agent!(tau, model, vel, tau, color, :T, radius, model.space.extend)

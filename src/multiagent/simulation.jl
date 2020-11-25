@@ -20,14 +20,14 @@ function FMP_Model(simtype;
                    rho = 7.5e6,
                    rho_obstacle = 7.5e6,
                    dt = 0.01,
-                   num_agents = 500,
-                   SS_dims = (2,2),  # x,y should be equal for proper plot scaling
-                   num_steps = 100,
+                   num_agents = 20,
+                   SS_dims = (1,1),  # x,y should be equal for proper plot scaling
+                   num_steps = 1000,
                    terminal_max_dis = 0.01,
                    c1 = 10,
                    c2 = 10,
                    vmax = 0.1,
-                   d = 0.01, # useful to set to radius of agents
+                   d = 0.02, # useful to set to radius of agents
                    r = (3*vmax^2/(2*rho))^(1/3)+d,
                    obstacle_list = [],
                   )
@@ -104,13 +104,14 @@ function FMP_Simulation(simtype::String; outputpath = "output/simresult.gif")
             xlims = (0, e[1]),
             ylims = (0, e[2]),
             aspect_ratio=:equal,
+            scheduler = PlotABM_Scheduler,
         )
 
         title!(p1, "FMP Simulation (step $(i))")
         step!(model, agent_step!, 2)
         next!(p)
     end
-    gif(anim, outputpath, fps = 100)
+    gif(anim, outputpath, fps = 25)
 
 end
 

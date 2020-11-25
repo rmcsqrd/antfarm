@@ -51,6 +51,34 @@ function PlotABM_RadiusUtil(a::AbstractAgent)
 end
 
 """
+This function is a scheduler to determine draw order of agents. Draw order (left to right) is :T, :O, :A
+"""
+function PlotABM_Scheduler(model::ABM)
+
+    # init blank lists
+    agent_list = []
+    object_list = []
+    target_list = []
+    for agent in values(model.agents)
+        if agent.type == :A
+            append!(agent_list, agent.id)
+        elseif agent.type == :T
+            append!(target_list, agent.id)
+        elseif agent.type == :O
+            append!(object_list, agent.id)
+        end
+    end
+
+    # make composite list [targets, objects, agents]
+    draw_order = []
+    append!(draw_order, target_list)
+    append!(draw_order, object_list)
+    append!(draw_order, agent_list)
+
+    return draw_order
+end
+
+"""
 This function is a utility function for coloring agents.
 """
 function AgentInitColor(i, num_agents)
@@ -59,3 +87,4 @@ function AgentInitColor(i, num_agents)
     return string("#", hex(agent_color))
 
 end
+
