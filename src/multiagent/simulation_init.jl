@@ -5,7 +5,7 @@ type = type of agent
     :A = agent (has velocity, subject to repulsive forces)
     :O = object (has no velocity, cannot move, agents must go around)
     :T = target (no velocity, just a projection of agent target zone)
-radius = radius of agent multiplier (1 is normal)
+radius = model.d/2 because model.d describes the minimum distance from agent centroid to agent centroid. Assuming that agents are circular and the same size, this means that model.d is also the diameter of the agent. Thus we use a radius of model.d/2
 """
 function AgentPositionInit(model, num_agents; type="random")
 
@@ -40,7 +40,7 @@ function LinePositions(model, num_agents)
         pos = (xi, yi)
         vel = (0,0)
         tau = pos .+ (0.8*x, 0)
-        radius = 0.02
+        radius = model.d/2
         color = AgentInitColor(i, num_agents)
         add_agent!(pos, model, vel, tau, color, :A, radius, model.space.extend)  # add agents
         add_agent!(tau, model, vel, tau, color, :T, radius, model.space.extend)  # add targets
@@ -63,9 +63,9 @@ function CenteredLineObject(model, num_agents)
         pos = (xi, yi)
         vel = (0,0)
         tau = pos 
-        radius = 0.02
+        radius = model.d/2
         color = AgentInitColor(i, num_agents)
-        add_agent!(pos, model, vel, tau, color, :A, radius)  # add agents
+        add_agent!(pos, model, vel, tau, color, :A, radius, model.space.extend)  # add agents
         
     end
 
@@ -74,7 +74,7 @@ function CenteredLineObject(model, num_agents)
     object_pos = (xio, yio)
     object_vel = (0,0)
     object_tau = (x-0.1*x, 0.5*y)
-    object_radius = 0.2
+    object_radius = 0.1
     color = "#ff0000"
     add_agent!(object_pos, model, object_vel, object_tau, color, :O, object_radius, model.space.extend)  # add object
     add_agent!(object_tau, model, object_vel, object_tau, color, :T, object_radius, model.space.extend)  # add object target
@@ -96,7 +96,7 @@ function CenteredObjectMovingLine(model, num_agents)
         pos = (xi, yi)
         vel = (0,0)
         tau = (0.8*x,0) .+ pos 
-        radius = 0.02
+        radius = model.d/2
         color = AgentInitColor(i, num_agents)
         add_agent!(tau, model, vel, tau, color, :T, radius, model.space.extend)  # add object target
         add_agent!(pos, model, vel, tau, color, :A, radius, model.space.extend)  # add agents
@@ -141,8 +141,7 @@ function CirclePositions(model, num_agents)
         tau = (xitau, yitau)  # goal is on opposite side of circle
         #tau = (x/2,y/2)
         type = :A
-        radius = model.d
-        #radius = 0.01
+        radius = model.d/2
         color = AgentInitColor(i, num_agents)
         add_agent!(pos, model, vel, tau, color, :A, radius, model.space.extend)
         add_agent!(tau, model, vel, tau, color, :T, radius, model.space.extend)
@@ -178,7 +177,7 @@ function CirclePositionsObject(model, num_agents)
         tau = (xitau, yitau)  # goal is on opposite side of circle
         #tau = (x/2,y/2)
         type = :A
-        radius = model.d
+        radius = model.d/2
         color = AgentInitColor(i, num_agents)
         add_agent!(pos, model, vel, tau, color, :A, radius, model.space.extend)
         add_agent!(tau, model, vel, tau, color, :T, radius, model.space.extend)
@@ -200,7 +199,7 @@ function RandomPositions(model, num_agents)
         vel = Tuple(rand(2))
         tau = Tuple(rand(2))
         type = :A
-        radius = 0.02
+        radius = model.d/2
         color = AgentInitColor(i, num_agents)
         add_agent!(pos, model, vel, tau, color, type, radius, model.space.extend)
     end

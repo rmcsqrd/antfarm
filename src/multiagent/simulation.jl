@@ -27,7 +27,7 @@ function FMP_Model(simtype;
                    c1 = 10,
                    c2 = 10,
                    vmax = 0.1,
-                   d = 0.02, # useful to set to radius of agents
+                   d = 0.02, # distance from centroid to centroid
                    r = (3*vmax^2/(2*rho))^(1/3)+d,
                    obstacle_list = [],
                   )
@@ -111,7 +111,7 @@ function FMP_Simulation(simtype::String; outputpath = "output/simresult.gif")
         step!(model, agent_step!, 2)
         next!(p)
     end
-    gif(anim, outputpath, fps = 25)
+    gif(anim, outputpath, fps = 100)
 
 end
 

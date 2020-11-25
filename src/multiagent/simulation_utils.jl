@@ -36,11 +36,12 @@ function PlotABM_RadiusUtil(a::AbstractAgent)
     # the scaling values are empirically selected
     # the object scale is based on the agent scaling
     
-    # 190 appears to be scaling factor for plotting
+    # magic number appears to be scaling factor for plotting
     #   ex, an agent/object with radius=1 place in center of SS
-    #   would take up the entire state space
+    #   would take up the entire state space. This was empirically
+    #   tested. The 1/a.SSdims is also tested and works well.
 
-    SS_scale = 190*minimum(a.SSdims)
+    SS_scale = 380*1/minimum(a.SSdims)  # technically a.SSdims[1] and [2] should be equal but just in case.
     
 
     if a.type == :O

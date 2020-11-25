@@ -110,8 +110,12 @@ function ObstactleFeedback(model::AgentBasedModel, agents, i)
     f = ntuple(i->0, length(agents[i].vel))
 
     for id in model.obstacle_list
-        dist = norm(agents[id].pos  .- agents[i].pos)
-        if dist < agents[id].radius/2+agents[i].radius/2  #bone why was this /2?
+        # the original paper defines z as p_j-r_j-p_i in equation 17/18
+        #   in the paper r_j is treated a vector, however it makes more sense to
+        #   treat as a scalar quantity so we take the norm, then subtract the radius
+        #   (j is obstacle (id) and i is agent (i))
+        dist = norm(agents[id].pos  .- agents[i].pos) - agents[id].radius
+        if dist < agents[i].radius
             force = -model.rho_obstacle * (dist - agents[id].radius)^2
             distnorm = (agents[id].pos .- agents[i].pos) ./ norm(agents[id].pos .- agents[i].pos)
             f = f .+ (force .* distnorm)
@@ -122,8 +126,6 @@ function ObstactleFeedback(model::AgentBasedModel, agents, i)
     else
         return f
     end
-    
-
 end
 
 """
