@@ -14,4 +14,3 @@ Force-based motion planning algorithm with RL navigational feedback. Implementat
     $ julia> antfarm.[command]()  // this is how it works
 ```
 
-

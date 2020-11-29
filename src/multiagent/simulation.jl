@@ -19,6 +19,7 @@ Initialization function for FMP simulation. Contains all model parameters.
 function FMP_Model(simtype;
                    rho = 7.5e6,
                    rho_obstacle = 7.5e6,
+                   step_inc = 2,
                    dt = 0.01,
                    num_agents = 20,
                    SS_dims = (1,1),  # x,y should be equal for proper plot scaling
@@ -35,6 +36,7 @@ function FMP_Model(simtype;
     # define AgentBasedModel (ABM)
     properties = Dict(:rho=>rho,
                       :rho_obstacle=>rho_obstacle,
+                      :step_inc=>step_inc,
                       :r=>r,
                       :d=>d,
                       :dt=>dt,
@@ -84,15 +86,21 @@ function FMP_Simulation(simtype::String; outputpath = "output/simresult.gif")
     gr()
     cd(@__DIR__)
     
+    # init model
     model = FMP_Model(simtype)
     agent_step!(agent, model) = move_agent!(agent, model, model.dt)
-
+    
+    # init state space
     e = model.space.extend
-    num_steps = model.num_steps
+    step_range = 1:model.step_inc:model.num_steps
 
-    p = Progress(round(Int,num_steps/2))
-    anim = @animate for i in 1:2:num_steps
+    mean_norms = Array{Float64}(undef,1,)
 
+    # setup progress meter counter
+    p = Progress(round(Int,model.num_steps/model.step_inc))
+    anim = @animate for i in step_range
+        
+        # step model including plot stuff
         FMP(model)
         p1 = plotabm(
             model,
@@ -106,9 +114,10 @@ function FMP_Simulation(simtype::String; outputpath = "output/simresult.gif")
             aspect_ratio=:equal,
             scheduler = PlotABM_Scheduler,
         )
-
         title!(p1, "FMP Simulation (step $(i))")
-        step!(model, agent_step!, 2)
+        
+        # step model and progress counter
+        step!(model, agent_step!, model.step_inc)
         next!(p)
     end
     gif(anim, outputpath, fps = 100)

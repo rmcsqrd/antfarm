@@ -29,7 +29,7 @@ function FMP(model::AgentBasedModel)
 
 
     # loop through agents and update velocities
-    for i in keys(agents)
+   for i in keys(agents)
         Ni = findall(x->x==1, interaction_array[i, :])
         # move_this_agent_to_new_position(i) in FMP paper
         UpdateVelocity(model, i, Ni, agents)
