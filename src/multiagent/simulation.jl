@@ -21,9 +21,9 @@ function FMP_Model(simtype;
                    rho_obstacle = 7.5e6,
                    step_inc = 2,
                    dt = 0.01,
-                   num_agents = 20,
-                   SS_dims = (1,1),  # x,y should be equal for proper plot scaling
-                   num_steps = 1000,
+                   num_agents = 100,
+                   SS_dims = (1, 1),  # x,y should be equal for proper plot scaling
+                   num_steps = 3000,
                    terminal_max_dis = 0.01,
                    c1 = 10,
                    c2 = 10,

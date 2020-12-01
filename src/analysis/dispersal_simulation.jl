@@ -63,9 +63,6 @@ function DispersalSimulation(model; outputpath = "output/simresult.gif")
 
     mean_norms = Array{Float64}(undef,length(step_range))
 
-    # setup progress meter counter
-    p = Progress(round(Int,model.num_steps/model.step_inc))
-    
     # loop through steps and compute mean distance
     for (plotcnt, i) in enumerate(step_range)
         FMP(model)
@@ -75,7 +72,6 @@ function DispersalSimulation(model; outputpath = "output/simresult.gif")
 
         collect_agent_data!(agent_df, model, adata)
         mean_norms[plotcnt] = GridlockDispersalAnalyze(agent_df, model)
-        next!(p)
     end
     return mean_norms
 
