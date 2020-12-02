@@ -14,6 +14,7 @@ function DispersalPlot(fileloc)
     ylabel!("Average Distance from SS Center")
     title!("Dispersal Simulation: Time vs Distance from Centroid")
     savefig("distplot.png")
+
     
     p = plot(legend=false)
     for run_df in eachrow(df)
@@ -155,6 +156,91 @@ function DispersalSimulationWrapperRadius()
                  "_stepinc$step_inc",
                  "_SSdims$SS_dims",
                  "_radmult$radmultrange",
+                 ".json"), objecttable(df))
+
+
+end
+
+
+function DispersalPlotVelocity(fileloc)
+    cd(@__DIR__)
+    df = DataFrame(jsontable(read(fileloc)))
+    p = plot(legend=:bottomright)
+    k=0.1
+
+    for run_df in eachrow(df)
+        num_agents = run_df.NumAgents
+        x = 1:run_df.StepInc:run_df.NumSteps
+        y = run_df.RunResults
+        plot!(x,y, label="vmax=$k")
+        k+=0.1
+        k = round(k;digits=2)
+    end
+    xlabel!("# Steps")
+    ylabel!("Average Distance from SS Center")
+    title!("Dispersal Simulation: Time vs Distance from Centroid")
+    savefig("distplot.png")
+    
+    p = plot(legend=false)
+    k = 0.1
+    for run_df in eachrow(df)
+        num_agents = run_df.NumAgents
+        x = k
+        y = run_df.RunTime
+        scatter!((x,y))
+        k+=0.1
+        k = round(k;digits=2)
+    end
+    xlabel!("# Agents")
+    ylabel!("Run Time (s)")
+    title!("Dispersal Simulation: Run Time")
+    savefig("runtimePlot.png")
+        
+end
+function DispersalSimulationWrapperVelocity()
+    # simulation params
+    min_num_agents = 100
+    max_num_agents = 100
+    agent_range_interval = 100
+
+    num_steps = 2500
+    step_inc = 2
+    SS_dims = (1, 1)
+    vmaxrange = 0.1:0.1:1
+
+    # run simulation
+    agents_range = min_num_agents:agent_range_interval:max_num_agents
+    df = DataFrame(NumAgents = Any[],
+                   NumSteps = Any[],
+                   StepInc = Any[],
+                   RunTime = Any[],
+                   RunResults = Any[])
+
+    @showprogress for vmax in vmaxrange
+        model = DispersalModel(num_agents=100,
+                               step_inc=step_inc,
+                               num_steps=num_steps,
+                               vmax=vmax,
+                               SS_dims=SS_dims)
+        # time function: result[1] = function result
+        #                result[2] = time elapsed
+        norm_time_hist = @timed DispersalSimulation(model)
+        push!(df, (100, 
+                   num_steps,
+                   step_inc,
+                   norm_time_hist[2],
+                   norm_time_hist[1]))
+
+    end
+
+    # write the data
+    write(string("simres/simulation_min$min_num_agents",
+                 "_int$agent_range_interval",
+                 "_max$max_num_agents",
+                 "_n$num_steps",
+                 "_stepinc$step_inc",
+                 "_SSdims$SS_dims",
+                 "_vmaxsim",
                  ".json"), objecttable(df))
 
 
