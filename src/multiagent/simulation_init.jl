@@ -108,7 +108,7 @@ function CenteredObjectMovingLine(model, num_agents)
     object_pos = (xio, yio)
     object_vel = (0,0)
     object_tau = object_pos
-    object_radius = 0.1
+    object_radius = 0.2
     color = "#ff0000"
     add_agent!(object_pos, model, object_vel, object_tau, color, :O, object_radius, model.space.extend)  # add object
 
