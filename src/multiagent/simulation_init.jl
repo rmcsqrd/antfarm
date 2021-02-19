@@ -32,7 +32,7 @@ Simulation where agents start on one side of the state space and move in a verti
 """
 function LinePositions(model, num_agents)
 
-    x, y = model.space.extend
+    x, y = model.space.extent
     for i in 1:num_agents
         xi = 0.1*x
         yi = y - (0.1*y+0.9*y/(num_agents)*(i-1))
@@ -42,8 +42,8 @@ function LinePositions(model, num_agents)
         tau = pos .+ (0.8*x, 0)
         radius = model.d/2
         color = AgentInitColor(i, num_agents)
-        add_agent!(pos, model, vel, tau, color, :A, radius, model.space.extend)  # add agents
-        add_agent!(tau, model, vel, tau, color, :T, radius, model.space.extend)  # add targets
+        add_agent!(pos, model, vel, tau, color, :A, radius, model.space.extent)  # add agents
+        add_agent!(tau, model, vel, tau, color, :T, radius, model.space.extent)  # add targets
 
     end
     return model
@@ -55,7 +55,7 @@ Simulation with unmoving vertical line of agents in middle of state space. A mov
 """
 function CenteredLineObject(model, num_agents)
     
-    x, y = model.space.extend
+    x, y = model.space.extent
     for i in 1:num_agents
         xi = 0.5*x
         yi = y - (0.1*y+0.9*y/(num_agents)*(i-1))
@@ -65,7 +65,7 @@ function CenteredLineObject(model, num_agents)
         tau = pos 
         radius = model.d/2
         color = AgentInitColor(i, num_agents)
-        add_agent!(pos, model, vel, tau, color, :A, radius, model.space.extend)  # add agents
+        add_agent!(pos, model, vel, tau, color, :A, radius, model.space.extent)  # add agents
         
     end
 
@@ -76,8 +76,8 @@ function CenteredLineObject(model, num_agents)
     object_tau = (x-0.1*x, 0.5*y)
     object_radius = 0.1
     color = "#ff0000"
-    add_agent!(object_pos, model, object_vel, object_tau, color, :O, object_radius, model.space.extend)  # add object
-    add_agent!(object_tau, model, object_vel, object_tau, color, :T, object_radius, model.space.extend)  # add object target
+    add_agent!(object_pos, model, object_vel, object_tau, color, :O, object_radius, model.space.extent)  # add object
+    add_agent!(object_tau, model, object_vel, object_tau, color, :T, object_radius, model.space.extent)  # add object target
 
     return model
 
@@ -88,7 +88,7 @@ Simulation similar to "Line Positions" with object in middle of state space that
 """
 function CenteredObjectMovingLine(model, num_agents)
     
-    x, y = model.space.extend
+    x, y = model.space.extent
     for i in 1:num_agents
         xi = 0.1*x
         yi = y - (0.1*y+0.9*y/(num_agents)*(i-1))
@@ -98,8 +98,8 @@ function CenteredObjectMovingLine(model, num_agents)
         tau = (0.8*x,0) .+ pos 
         radius = model.d/2
         color = AgentInitColor(i, num_agents)
-        add_agent!(tau, model, vel, tau, color, :T, radius, model.space.extend)  # add object target
-        add_agent!(pos, model, vel, tau, color, :A, radius, model.space.extend)  # add agents
+        add_agent!(tau, model, vel, tau, color, :T, radius, model.space.extent)  # add object target
+        add_agent!(pos, model, vel, tau, color, :A, radius, model.space.extent)  # add agents
         
     end
 
@@ -110,7 +110,7 @@ function CenteredObjectMovingLine(model, num_agents)
     object_tau = object_pos
     object_radius = 0.2
     color = "#ff0000"
-    add_agent!(object_pos, model, object_vel, object_tau, color, :O, object_radius, model.space.extend)  # add object
+    add_agent!(object_pos, model, object_vel, object_tau, color, :O, object_radius, model.space.extent)  # add object
 
     return model
 
@@ -122,7 +122,7 @@ Agents start around the perimeter of a circle and attempt to move to a position 
 function CirclePositions(model, num_agents)
 
     # determine circle params
-    x, y = model.space.extend
+    x, y = model.space.extent
     r = 0.9*(min(x,y)/2)
 
     for i in 1:num_agents
@@ -130,7 +130,7 @@ function CirclePositions(model, num_agents)
         # compute position around circle
         theta_i = (2*π/num_agents)*i
         xi = r*cos(theta_i)+x/2
-        yi = r*sin(theta_i)-y/2
+        yi = r*sin(theta_i)+y/2
         
         xitau = r*cos(theta_i+π)+x/2
         yitau = r*sin(theta_i+π)+y/2
@@ -143,8 +143,8 @@ function CirclePositions(model, num_agents)
         type = :A
         radius = model.d/2
         color = AgentInitColor(i, num_agents)
-        add_agent!(pos, model, vel, tau, color, :A, radius, model.space.extend)
-        add_agent!(tau, model, vel, tau, color, :T, radius, model.space.extend)
+        add_agent!(pos, model, vel, tau, color, :A, radius, model.space.extent)
+        add_agent!(tau, model, vel, tau, color, :T, radius, model.space.extent)
     end
 
     return model
@@ -158,7 +158,7 @@ Agents start around the perimeter of a circle and attempt to move to a position 
 function CirclePositionsObject(model, num_agents)
 
     # determine circle params
-    x, y = model.space.extend
+    x, y = model.space.extent
     r = 0.9*(min(x,y)/2)
 
     for i in 1:num_agents
@@ -179,12 +179,12 @@ function CirclePositionsObject(model, num_agents)
         type = :A
         radius = model.d/2
         color = AgentInitColor(i, num_agents)
-        add_agent!(pos, model, vel, tau, color, :A, radius, model.space.extend)
-        add_agent!(tau, model, vel, tau, color, :T, radius, model.space.extend)
+        add_agent!(pos, model, vel, tau, color, :A, radius, model.space.extent)
+        add_agent!(tau, model, vel, tau, color, :T, radius, model.space.extent)
     end
 
     object_radius = 0.1
-    add_agent!((x/2,y/2), model, (0,0), (x/2,y/2), "#ff0000", :O, object_radius, model.space.extend)  # add object in middle
+    add_agent!((x/2,y/2), model, (0,0), (x/2,y/2), "#ff0000", :O, object_radius, model.space.extent)  # add object in middle
     return model
 
 end
@@ -201,7 +201,7 @@ function RandomPositions(model, num_agents)
         type = :A
         radius = model.d/2
         color = AgentInitColor(i, num_agents)
-        add_agent!(pos, model, vel, tau, color, type, radius, model.space.extend)
+        add_agent!(pos, model, vel, tau, color, type, radius, model.space.extent)
     end
 
     return model

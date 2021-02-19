@@ -49,7 +49,7 @@ function FMP_Model(simtype;
                       :obstacle_list=>obstacle_list,
                      )
     
-    space2d = ContinuousSpace(2; periodic=true, extend=SS_dims)
+    space2d = ContinuousSpace(SS_dims; periodic=true)
     model = ABM(FMP_Agent, space2d, properties=properties)
     AgentPositionInit(model, num_agents; type=simtype)
 
@@ -60,7 +60,6 @@ function FMP_Model(simtype;
         end
     end
     
-    index!(model)
     return model
 
 end
@@ -91,7 +90,7 @@ function FMP_Simulation(simtype::String; outputpath = "output/simresult.gif")
     agent_step!(agent, model) = move_agent!(agent, model, model.dt)
     
     # init state space
-    e = model.space.extend
+    e = model.space.extent
     step_range = 1:model.step_inc:model.num_steps
 
     mean_norms = Array{Float64}(undef,1,)
@@ -102,7 +101,7 @@ function FMP_Simulation(simtype::String; outputpath = "output/simresult.gif")
         
         # step model including plot stuff
         FMP(model)
-        p1 = plotabm(
+        p1 = AgentsPlots.plotabm(
             model,
             as = PlotABM_RadiusUtil,
             ac = PlotABM_ColorUtil,

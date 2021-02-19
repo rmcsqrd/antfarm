@@ -43,7 +43,6 @@ function PlotABM_RadiusUtil(a::AbstractAgent)
 
     SS_scale = 380*1/minimum(a.SSdims)  # technically a.SSdims[1] and [2] should be equal but just in case.
     
-
     if a.type == :O
         return a.radius*SS_scale
     else
