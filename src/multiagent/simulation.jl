@@ -30,57 +30,57 @@ end
 # Now that we've defined the plot utilities, lets re-run our simulation with
 # some additional options. We do this by redefining the model, re-adding the
 # agents but this time with a color parameter that is actually used. 
+function FMP_Simulation()
+    model = FMP_Model()
 
-model = FMP_Model()
+    x, y = model.space.extent
+    r = 0.9*(min(x,y)/2)
 
-x, y = model.space.extent
-r = 0.9*(min(x,y)/2)
+    for i in 1:model.num_agents
 
-for i in 1:model.num_agents
+        ## compute position around circle
+        theta_i = (2*π/model.num_agents)*i
+        xi = r*cos(theta_i)+x/2
+        yi = r*sin(theta_i)+y/2
+        
+        xitau = r*cos(theta_i+π)+x/2
+        yitau = r*sin(theta_i+π)+y/2
 
-    ## compute position around circle
-    theta_i = (2*π/model.num_agents)*i
-    xi = r*cos(theta_i)+x/2
-    yi = r*sin(theta_i)+y/2
-    
-    xitau = r*cos(theta_i+π)+x/2
-    yitau = r*sin(theta_i+π)+y/2
-
-    ## set agent params
-    pos = (xi, yi)
-    vel = (0,0)
-    tau = (xitau, yitau)  ## goal is on opposite side of circle
-    radius = model.FMP_params.d/2
-    agent_color = AgentInitColor(i, model.num_agents)  ## This is new
-    add_agent!(pos, model, vel, tau, agent_color, :A, radius, model.space.extent, [])
-    add_agent!(tau, model, vel, tau, agent_color, :T, radius, model.space.extent, [])
-end
-
-agent_step!(agent, model) = move_agent!(agent, model, model.dt)
-
-function model_step!(model)
-    FMP_Update_Interacting_Pairs(model)
-    for agent_id in keys(model.agents)
-        FMP_Update_Vel(model.agents[agent_id], model)
+        ## set agent params
+        pos = (xi, yi)
+        vel = (0,0)
+        tau = (xitau, yitau)  ## goal is on opposite side of circle
+        radius = model.FMP_params.d/2
+        agent_color = AgentInitColor(i, model.num_agents)  ## This is new
+        add_agent!(pos, model, vel, tau, agent_color, :A, radius, model.space.extent, [])
+        add_agent!(tau, model, vel, tau, agent_color, :T, radius, model.space.extent, [])
     end
-end
 
-e = model.space.extent
-step_range = 1:model.step_inc:model.num_steps
+    agent_step!(agent, model) = move_agent!(agent, model, model.dt)
 
-InteractiveDynamics.abm_video(
-    "circle_swap.mp4",
-    model,
-    agent_step!,
-    model_step!,
-    title = "FMP Simulation",
-    frames = model.num_steps,
-    framerate = 100,
-    resolution = (600, 600),
-    as = PlotABM_RadiusUtil,
-    ac = PlotABM_ColorUtil,
-    am = PlotABM_ShapeUtil,
-    equalaspect=true,
-    scheduler = PlotABM_Scheduler,
-   )
-    
+    function model_step!(model)
+        FMP_Update_Interacting_Pairs(model)
+        for agent_id in keys(model.agents)
+            FMP_Update_Vel(model.agents[agent_id], model)
+        end
+    end
+
+    e = model.space.extent
+    step_range = 1:model.step_inc:model.num_steps
+
+    InteractiveDynamics.abm_video(
+        "circle_swap.mp4",
+        model,
+        agent_step!,
+        model_step!,
+        title = "FMP Simulation",
+        frames = model.num_steps,
+        framerate = 100,
+        resolution = (600, 600),
+        as = PlotABM_RadiusUtil,
+        ac = PlotABM_ColorUtil,
+        am = PlotABM_ShapeUtil,
+        equalaspect=true,
+        scheduler = PlotABM_Scheduler,
+       )
+end 
