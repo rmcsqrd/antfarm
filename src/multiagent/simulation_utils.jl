@@ -1,4 +1,3 @@
-using Colors
 
 """
 This function is a utility function that takes an agent and overwrites its color if it is of type :T (target) and gives it a grey color for display purposes.

@@ -1,5 +1,4 @@
-using Agents, Random, AgentsPlots, Plots, ProgressMeter
-
+cd(@__DIR__)
 mutable struct FMP_Agent <: AbstractAgent
     id::Int
     pos::NTuple{2, Float64}
@@ -8,120 +7,80 @@ mutable struct FMP_Agent <: AbstractAgent
     color::String
     type::Symbol
     radius::Float64
-    SSdims::NTuple{2, Float64}  # include this for plotting
-    # NOTE: if you change anything in this you need to restart the REPL
-    # (I think it is the precompilation step)
+    SSdims::NTuple{2, Float64}  ## include this for plotting
+    Ni::Array{Int64} ## array of tuples with agent ids and agent positions
 end
 
-"""
-Initialization function for FMP simulation. Contains all model parameters.
-"""
-function FMP_Model(simtype;
-                   rho = 7.5e6,
-                   rho_obstacle = 7.5e6,
-                   step_inc = 2,
-                   dt = 0.01,
-                   num_agents = 10,
-                   SS_dims = (1, 1),  # x,y should be equal for proper plot scaling
-                   num_steps = 300,
-                   terminal_max_dis = 0.01,
-                   c1 = 10,
-                   c2 = 10,
-                   vmax = 0.1,
-                   d = 0.02, # distance from centroid to centroid
-                   r = (3*vmax^2/(2*rho))^(1/3)+d,
-                   obstacle_list = [],
-                  )
+## define AgentBasedModel (ABM)
 
-    # define AgentBasedModel (ABM)
-    properties = Dict(:rho=>rho,
-                      :rho_obstacle=>rho_obstacle,
-                      :step_inc=>step_inc,
-                      :r=>r,
-                      :d=>d,
-                      :dt=>dt,
-                      :num_agents=>num_agents,
-                      :num_steps=>num_steps,
-                      :terminal_max_dis=>terminal_max_dis,
-                      :c1=>c1,
-                      :c2=>c2,
-                      :vmax=>vmax,
-                      :obstacle_list=>obstacle_list,
+function FMP_Model()
+    properties = Dict(:FMP_params=>FMP_Parameter_Init(),
+                      :dt => 0.01,
+                      :num_agents=>20,
+                      :num_steps=>1500,
+                      :step_inc=>2,
                      )
-    
-    space2d = ContinuousSpace(SS_dims; periodic=true)
+
+    #space2d = ContinuousSpace((1,1); periodic = true, update_vel! = FMP_Update_Vel)  #BONE commented this out
+    space2d = ContinuousSpace((1,1); periodic = true)
     model = ABM(FMP_Agent, space2d, properties=properties)
-    AgentPositionInit(model, num_agents; type=simtype)
-
-    # append obstacles into obstacle_list
-    for agent in allagents(model)
-        if agent.type == :O
-            append!(model.obstacle_list, agent.id)
-        end
-    end
-    
     return model
-
 end
 
-"""
-Simulation wrapper for FMP simulations. 
+# Now that we've defined the plot utilities, lets re-run our simulation with
+# some additional options. We do this by redefining the model, re-adding the
+# agents but this time with a color parameter that is actually used. 
 
-Initializes model based on "type" parameter which dictates type of simulation to perform. Different simulation descriptions can be found in `/multiagent/simulation_init.jl`.
+model = FMP_Model()
 
-Possible inputs include:
-- `circle` have agents move/swap places around perimeter of a circle
-- `circle_object` have agents move/swap places around perimeter of a circle with an object in the middle
-- `line` have agents move left to right in vertical line
-- `centered_line_object` have agents remain stationary in vertical line and an object move through them
-- `moving_line` have agents move left to right in vertical line past an object
-- `random` have agents start in random positions with random velocities
+x, y = model.space.extent
+r = 0.9*(min(x,y)/2)
 
-Next it loops through the number of simulation steps (specified in model params) and create simulation display using `plotabm()`.
+for i in 1:model.num_agents
 
-Finished by saving at the location specified by `outputpath` variable. 
-"""
-function FMP_Simulation(simtype::String; outputpath = "output/simresult.gif")
-    gr()
-    cd(@__DIR__)
+    ## compute position around circle
+    theta_i = (2*π/model.num_agents)*i
+    xi = r*cos(theta_i)+x/2
+    yi = r*sin(theta_i)+y/2
     
-    # init model
-    model = FMP_Model(simtype)
-    agent_step!(agent, model) = move_agent!(agent, model, model.dt)
-    
-    # init state space
-    e = model.space.extent
-    step_range = 1:model.step_inc:model.num_steps
+    xitau = r*cos(theta_i+π)+x/2
+    yitau = r*sin(theta_i+π)+y/2
 
-    mean_norms = Array{Float64}(undef,1,)
+    ## set agent params
+    pos = (xi, yi)
+    vel = (0,0)
+    tau = (xitau, yitau)  ## goal is on opposite side of circle
+    radius = model.FMP_params.d/2
+    agent_color = AgentInitColor(i, model.num_agents)  ## This is new
+    add_agent!(pos, model, vel, tau, agent_color, :A, radius, model.space.extent, [])
+    add_agent!(tau, model, vel, tau, agent_color, :T, radius, model.space.extent, [])
+end
 
-    # setup progress meter counter
-    p = Progress(round(Int,model.num_steps/model.step_inc))
-    anim = @animate for i in step_range
-        
-        # step model including plot stuff
-        FMP(model)
-        p1 = AgentsPlots.plotabm(
-            model,
-            as = PlotABM_RadiusUtil,
-            ac = PlotABM_ColorUtil,
-            am = PlotABM_ShapeUtil,
-            #showaxis = false,
-            grid = false,
-            xlims = (0, e[1]),
-            ylims = (0, e[2]),
-            aspect_ratio=:equal,
-            scheduler = PlotABM_Scheduler,
-        )
-        title!(p1, "FMP Simulation (step $(i))")
-        
-        # step model and progress counter
-        step!(model, agent_step!, model.step_inc)
-        next!(p)
+agent_step!(agent, model) = move_agent!(agent, model, model.dt)
+
+function model_step!(model)
+    FMP_Update_Interacting_Pairs(model)
+    for agent_id in keys(model.agents)
+        FMP_Update_Vel(model.agents[agent_id], model)
     end
-    gif(anim, outputpath, fps = 100)
-
 end
 
+e = model.space.extent
+step_range = 1:model.step_inc:model.num_steps
 
-
+InteractiveDynamics.abm_video(
+    "circle_swap.mp4",
+    model,
+    agent_step!,
+    model_step!,
+    title = "FMP Simulation",
+    frames = model.num_steps,
+    framerate = 100,
+    resolution = (600, 600),
+    as = PlotABM_RadiusUtil,
+    ac = PlotABM_ColorUtil,
+    am = PlotABM_ShapeUtil,
+    equalaspect=true,
+    scheduler = PlotABM_Scheduler,
+   )
+    
