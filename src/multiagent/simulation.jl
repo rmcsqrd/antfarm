@@ -62,8 +62,8 @@ end
 function FMP_Episode(a3c_global_params)
 
     # define FMP params
-    num_agents = 8
-    num_goals = 10
+    num_agents = 20
+    num_goals = 20
     num_steps = 1500
 
     # define model
@@ -71,6 +71,7 @@ function FMP_Episode(a3c_global_params)
     
     # initialize model by adding in agents
     LostHiker(model)
+    #AgentPositionInit(model; type="circle")
 
     # create agent/goal hashes for RL stuff
     StateSpaceHashing(model)
@@ -92,14 +93,12 @@ function FMP_Episode(a3c_global_params)
         FMP_Update_Interacting_Pairs(model)
         for agent_id in keys(model.agents)
             FMP_Update_Vel(model.agents[agent_id], model)
-            println(model.agents[agent_id].Ni)
-            println(model.agents[agent_id].Gi, "\n")
         end
 
-        # do RL stuff
+        # do RL stuff 
         StateTransition(model)
         Reward(model)
-        Action(model)
+        #Action(model)  # if you comment this out it behaves as vanilla FMP
         model.ModelStep += 1
         
         # show progress
@@ -126,27 +125,3 @@ function FMP_Episode(a3c_global_params)
 
     RewardPlot(model)
 end 
-
-function StateSpaceHashing(model)
-
-    # create associations between agent ID's and RL matrices
-    #   Note that Agents.jl stores goal positions and objects as agents with
-    #   unique IDs but this gives issues when trying to index into the RL state
-    #   space arrays. We solve this by hashing
-    
-    # start by getting list of agent ids that have symbol :A
-    agent_list = [hash(agent_id) for agent_id in keys(model.agents) if model.agents[agent_id].type == :A]
-    model.AgentHash = Dict(zip(agent_list, 1:length(agent_list)))
-    
-    # next get list of ids that have symbol :T
-    # create ways to "hash into" state space array from ContinuousSpace model, and "hash out of" state
-    # space array into ContinuousSpace model so we can update agent target
-    # positions
-    goal_list = [goal_id for goal_id in keys(model.agents) if model.agents[goal_id].type == :T]
-    for (idx, goal_id) in enumerate(goal_list)
-        model.GoalHash[hash(goal_id)] = idx
-        model.GoalHash[hash(idx)] = goal_id 
-    end
-
-end
-

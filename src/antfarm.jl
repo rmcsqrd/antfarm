@@ -30,4 +30,7 @@ include("rl/A3C.jl")
 # include analysis stuff
 include("analysis/analysis_tools.jl")
 
+# include util stuff
+include("utils/utils.jl")
+
 end # module

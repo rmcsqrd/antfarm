@@ -65,7 +65,7 @@ function PolicyEvaluate(model, i)
     action_dist = reshape(action_dist, (length(action_dist),))
     
     actions = []
-    [push!(actions, x) for x in 1:10]
+    [push!(actions, x) for x in 1:model.num_goals]
     push!(actions, :random)
     action = sample(actions, ProbabilityWeights(action_dist))
     return action  # returns an integer corresponding to goal or :random symbol

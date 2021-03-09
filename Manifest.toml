@@ -25,7 +25,7 @@ version = "3.2.0"
 
 [[Agents]]
 deps = ["DataFrames", "Distributed", "GraphRecipes", "LightGraphs", "LinearAlgebra", "OpenStreetMapX", "Random", "RecipesBase", "Requires", "StatsBase"]
-git-tree-sha1 = "4e175112bda97936852a6f72186f654bc92bb921"
+git-tree-sha1 = "bcb0e2ef2ececa0600408dd75e421e5f68ece733"
 repo-rev = "FMP"
 repo-url = "/Users/riomcmahon/Programming/Agents.jl"
 uuid = "46ada45e-f475-11e8-01d0-f70cc89e6671"

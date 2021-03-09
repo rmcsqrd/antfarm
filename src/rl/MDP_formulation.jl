@@ -74,11 +74,6 @@ function Reward(model)
     for agent_id in keys(model.agents)
         if model.agents[agent_id].type == :A
             i = model.AgentHash[hash(agent_id)]
-            if length(model.agents[i].Gi) > 0
-                println("i = $i, GO = ")
-                println(model.SS.GO[i, :], "\n")
-                println(model.agents[i].Gi, "\n")
-            end
 
             # give reward for communication
             for neighbor_id in model.agents[i].Ni
@@ -108,7 +103,7 @@ function Action(model)
 
                 # if agent knows location of target (which is also represented
                 # as an agent), then give it the target location
-                goal_id = model.GoalHash[hash(selected_action)]
+                goal_id = model.GoalHash[selected_action]
                 if model.SS.GA[i, selected_action] == 1
                     action = model.agents[goal_id].pos
                 else
