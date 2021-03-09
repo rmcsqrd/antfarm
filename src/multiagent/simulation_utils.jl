@@ -6,7 +6,7 @@ function PlotABM_ColorUtil(a::AbstractAgent)
     if a.type == :A || a.type == :O
         return a.color
     else
-        return "#ffffff"
+        return "#A9A9A9"
     end
 end
 
@@ -40,7 +40,8 @@ function PlotABM_RadiusUtil(a::AbstractAgent)
     #   would take up the entire state space. This was empirically
     #   tested. The 1/a.SSdims is also tested and works well.
 
-    SS_scale = 380*1/minimum(a.SSdims)  # technically a.SSdims[1] and [2] should be equal but just in case.
+    #SS_scale = 380*1/minimum(a.SSdims)  # technically a.SSdims[1] and [2] should be equal but just in case.
+    SS_scale = 1000*1/minimum(a.SSdims)
     
     if a.type == :O
         return a.radius*SS_scale
