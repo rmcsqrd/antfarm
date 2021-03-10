@@ -77,10 +77,16 @@ function PolicyEvaluate(model, agent_id)
     state = GetSubstate(model, i)
     action_dist = model.agents[agent_id].Pip(state)
     action_dist = reshape(action_dist, (length(action_dist),))
-    
+   
+    # generate action list
     actions = []
     [push!(actions, x) for x in 1:model.num_goals]
     push!(actions, model.num_goals+1) # this is :random
+
+    # get probabilities
+    probs = ProbabilityWeights(softmax(action_dist))
+
+    # select action
     action = sample(actions, ProbabilityWeights(action_dist))
     return action  # returns an integer corresponding to goal or number larger than goals for random
 end

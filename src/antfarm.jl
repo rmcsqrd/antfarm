@@ -3,6 +3,7 @@ module antfarm
 # imports
 using Revise
 using Debugger
+using CSV
 using Colors
 using Random
 using Plots
@@ -18,7 +19,7 @@ import CairoMakie
 
 # include simulation stuff
 include("multiagent/simulation_init.jl")
-include("multiagent/simulation_utils.jl")
+include("multiagent/plot_utils.jl")
 include("multiagent/simulation.jl")
 include("multiagent/rl_simulation_init.jl")
 

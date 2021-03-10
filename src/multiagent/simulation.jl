@@ -50,7 +50,7 @@ function FMP_Epoch()
     num_agents = 20
     num_goals = 20
     num_steps = 1500
-    num_episodes = 100
+    num_episodes = 10
 
     # initialize stuff
     state_dim = 3*num_goals+num_agents
@@ -62,9 +62,19 @@ function FMP_Epoch()
                             A3C_Value_Init(),
                            )
     # train model
+    run_history = DataFrame(episode_num = Int64[], episode_data = Dict[])
+    write_path = "/Users/riomcmahon/Programming/antfarm/src/data_output/run_history.csv"
+    try
+        rm(write_path)
+        println("run_history.csv overwritten")
+    catch
+        println("run_history.csv doesn't exist, moving on")
+    end
     @showprogress for episode in 1:num_episodes
         agent_data = FMP_Episode(A3C_params)
-        display(agent_data)
+        push!(run_history, [episode, agent_data])
+        CSV.write(write_path, run_history, append=true)
+        #display(agent_data)
         # train policy
         # train value function
     end
