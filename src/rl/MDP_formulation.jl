@@ -94,9 +94,11 @@ function Action(model)
         if model.agents[agent_id].type == :A
             i = model.AgentHash[hash(agent_id)]
             selected_action = PolicyEvaluate(model, agent_id)
-
-            # if random selected, give random target
-            if selected_action == :random
+            
+            # Symbols don't play nice with data recording:
+            #   a number larger than model.num_goals implies random
+            #   (see PolicyEvaluate)
+            if selected_action > model.num_goals
                 model.agents[agent_id].tau = Tuple(rand(2))
             else
 

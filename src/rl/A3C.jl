@@ -71,9 +71,9 @@ function PolicyEvaluate(model, agent_id)
     
     actions = []
     [push!(actions, x) for x in 1:model.num_goals]
-    push!(actions, :random)
+    push!(actions, model.num_goals+1) # this is :random
     action = sample(actions, ProbabilityWeights(action_dist))
-    return action  # returns an integer corresponding to goal or :random symbol
+    return action  # returns an integer corresponding to goal or number larger than goals for random
 end
 
 
