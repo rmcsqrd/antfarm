@@ -15,16 +15,20 @@ function A3C_Episode_Init(model, a3c_global_params)
     theta_v = theta
 
     # seed each agent with networks
+    goal_idx = 1
     for agent_id in keys(model.agents)
+
+        # first, assign policy to agents
         if model.agents[agent_id].type == :A
             i = model.AgentHash[hash(agent_id)]
+            model.agents[agent_id].Pip = theta
+            model.agents[agent_id].Vp = theta_v
 
-            # pack the A3C struct with agent info
-            state_hist = zeros(Bool, length(flattened_state), model.num_steps)
-            action_hist = Array{Tuple, 2}(undef, 1, model.num_steps)
-            reward_hist = zeros(Float64, 1, model.num_steps)
-            agent_i_A3C = A3C_Agent(theta, theta_v, state_hist, action_hist, reward_hist)
-            model.A3C[i] = agent_i_A3C
+        # next, create dict of goals. key = RL index (1:num_goals; NOT
+        # Agents.jl agent.id), value = Agents.jl agent.pos
+        elseif model.agents[agent_id].type == :T
+            model.Goals[goal_idx] = model.agents[agent_id].pos
+            goal_idx += 1
         end
     end
 
@@ -43,7 +47,7 @@ function GetSubstate(model, i)
         AIi = model.SS.AI[i, :]
 
         flattened_state = state_flatten(GAi, GOi, GIi, AIi)
-        return flattened_state
+        return reshape(flattened_state, (length(flattened_state),))
     
 end
 
@@ -59,9 +63,10 @@ function state_flatten(GAi, GOi, GIi, AIi)
     return flatten_state
 end
 
-function PolicyEvaluate(model, i)
+function PolicyEvaluate(model, agent_id)
+    i = model.AgentHash[hash(agent_id)]
     state = GetSubstate(model, i)
-    action_dist = model.A3C[i].Pi_prime(state)
+    action_dist = model.agents[agent_id].Pip(state)
     action_dist = reshape(action_dist, (length(action_dist),))
     
     actions = []

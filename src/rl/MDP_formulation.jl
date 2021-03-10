@@ -54,10 +54,9 @@ function StateTransition(model)
                 # to simulate information exchange
                 model.SS.GA[i, :] = model.SS.GA[i, :] .| model.SS.GA[j, :]  # period makes it elementwise
                 model.SS.GA[j, :] = model.SS.GA[j, :] .| model.SS.GA[i, :]  # period makes it elementwise
-                
-                # update state history
-                model.A3C[i].StateHist[:, model.ModelStep] = GetSubstate(model, i)
             end
+            # update state history
+            model.agents[agent_id].State = GetSubstate(model, i)
         end
     end
 
@@ -80,12 +79,12 @@ function Reward(model)
                 j = model.AgentHash[hash(neighbor_id)]
                 info_exchange = xor.(model.SS.GA[i, :], model.SS.GA[j, :])
                 beta = sum(info_exchange)/model.num_goals
-                model.A3C[i].RewardHist[model.ModelStep] += 10*beta
+                model.agents[agent_id].Reward += 10*beta
             end
 
             # get reward for goal occupation
-            model.A3C[i].RewardHist[model.ModelStep] += sum(model.SS.GO[i,:]) 
-            model.A3C[i].RewardHist[model.ModelStep] += sum(model.SS.GO[i,:])*alpha
+            model.agents[agent_id].Reward += sum(model.SS.GO[i,:]) 
+            model.agents[agent_id].Reward += sum(model.SS.GO[i,:])*alpha
         end
     end
 end
@@ -94,25 +93,23 @@ function Action(model)
     for agent_id in keys(model.agents)
         if model.agents[agent_id].type == :A
             i = model.AgentHash[hash(agent_id)]
-            selected_action = PolicyEvaluate(model, i)
+            selected_action = PolicyEvaluate(model, agent_id)
 
             # if random selected, give random target
             if selected_action == :random
-                action = Tuple(rand(2))
+                model.agents[agent_id].tau = Tuple(rand(2))
             else
 
                 # if agent knows location of target (which is also represented
                 # as an agent), then give it the target location
-                goal_id = model.GoalHash[selected_action]
                 if model.SS.GA[i, selected_action] == 1
-                    action = model.agents[goal_id].pos
+                    model.agents[agent_id].tau = model.Goals[action]
                 else
                     # else more randomly
-                    action = Tuple(rand(2))
+                    model.agents[agent_id].tau = Tuple(rand(2))
                 end
             end
-            model.agents[agent_id].tau = action
-            model.A3C[i].ActionHist[model.ModelStep] = action
+            model.agents[agent_id].Action = selected_action
         end
     end
 end

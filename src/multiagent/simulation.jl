@@ -11,14 +11,11 @@ mutable struct FMP_Agent <: AbstractAgent
     SSdims::NTuple{2, Float64}  ## include this for plotting
     Ni::Vector{Int64} ## array of neighboring agent IDs
     Gi::Vector{Int64} ## array of neighboring goal IDs
-end
-
-mutable struct A3C_Agent
-    Pi_prime
-    V_prime
-    StateHist
-    ActionHist
-    RewardHist
+    Action::Union{Int64, Symbol}
+    Reward::Float64
+    State::Vector{Bool}
+    Pip
+    Vp
 end
 
 mutable struct A3C_Global
@@ -42,6 +39,7 @@ function FMP_Model(; num_agents=20, num_goals=num_agents, num_steps=1500)
                             ),
                       :AgentHash=>Dict{Int128, Int128}(),
                       :GoalHash=>Dict{Int128, Int128}(),
+                      :Goals=>Dict{Int64, Tuple{Float64, Float64}}(),
                       :A3C=>Dict(),
                       :ModelStep=>1,
                      )
@@ -53,7 +51,7 @@ end
 
 function FMP_Epoch()
     params = []
-    FMP_Episode(params)
+    agent_data = FMP_Episode(params)
 end
 
 # Now that we've defined the plot utilities, lets re-run our simulation with
@@ -71,7 +69,6 @@ function FMP_Episode(a3c_global_params)
     
     # initialize model by adding in agents
     LostHiker(model)
-    #AgentPositionInit(model; type="circle")
 
     # create agent/goal hashes for RL stuff
     StateSpaceHashing(model)
@@ -98,7 +95,7 @@ function FMP_Episode(a3c_global_params)
         # do RL stuff 
         StateTransition(model)
         Reward(model)
-        #Action(model)  # if you comment this out it behaves as vanilla FMP
+        Action(model)  # if you comment this out it behaves as vanilla FMP
         model.ModelStep += 1
         
         # show progress
@@ -106,22 +103,8 @@ function FMP_Episode(a3c_global_params)
 
     end
 
-    # plot stuff
-    InteractiveDynamics.abm_video(
-        "/Users/riomcmahon/Desktop/circle_swap.mp4",
-        model,
-        agent_step!,
-        model_step!,
-        title = "FMP Simulation",
-        frames = model.num_steps,
-        framerate = 100,
-        resolution = (600, 600),
-        as = PlotABM_RadiusUtil,
-        ac = PlotABM_ColorUtil,
-        am = PlotABM_ShapeUtil,
-        equalaspect=true,
-        scheduler = PlotABM_Scheduler,
-       )
-
-    RewardPlot(model)
+    agent_data = RunModelCollect(model, agent_step!, model_step!)
+    agent_data_dict = ProcessData(agent_data, model)
+    return agent_data_dict
 end 
+

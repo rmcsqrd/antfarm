@@ -24,3 +24,54 @@ function StateSpaceHashing(model)
     end
 
 end
+
+"""
+Run model, return data
+"""
+function RunModelCollect(model, agent_step!, model_step!)
+    adata = [ :type, :State, :Action, :Reward]
+    agent_data, _ = run!(model, agent_step!, model_step!, model.num_steps; adata)
+    return agent_data
+end
+
+"""
+Run model only
+"""
+function RunModel(model, agent_step!, model_step!)
+    
+    for i in 1:model.num_steps
+        step!(model, agent_step!, model_step!)
+        next!(p)
+    end
+end
+
+"""
+Run model and create output plot
+"""
+function RunModelPlot(model, agent_step!, model_step!)
+    # delete original file
+    filepath = "/Users/riomcmahon/Desktop/circle_swap.mp4"
+    try
+        rm(filepath)
+    catch
+        println("file doesn't exist, moving on")
+    end
+
+    # plot stuff
+    InteractiveDynamics.abm_video(
+        filepath,
+        model,
+        agent_step!,
+        model_step!,
+        title = "FMP Simulation",
+        frames = model.num_steps,
+        framerate = 100,
+        resolution = (600, 600),
+        as = PlotABM_RadiusUtil,
+        ac = PlotABM_ColorUtil,
+        am = PlotABM_ShapeUtil,
+        equalaspect=true,
+        scheduler = PlotABM_Scheduler,
+       )
+
+end
