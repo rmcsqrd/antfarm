@@ -1,18 +1,31 @@
-function A3C_Epoch_Init()
-
+mutable struct A3C_Global
+    num_agents::Int64
+    num_goals::Int64
+    num_steps::Int64
+    num_episodes::Int64
+    Pi
+    V
 end
 
-function A3C_Episode_Init(model, a3c_global_params)
-
-    # get starting substate, all agents are same so just choose agent 1 for
-    # seed dims
-    flattened_state = GetSubstate(model, 1)
-
+function A3C_Policy_Init(state_dim, num_goals)
+    
     # build network
-    layer1 = LSTM(length(flattened_state), 128)
-    layer2 = LSTM(128, model.num_goals+1)
+    layer1 = LSTM(state_dim, 128)
+    layer2 = LSTM(128, num_goals+1)
     theta = Chain(layer1, layer2) # theta is policy
-    theta_v = theta
+    return theta
+end
+
+function A3C_Value_Init()
+    theta_v = 1  # BONE this is dummy
+    return theta_v
+end
+
+function A3C_Episode_Init(model, A3C_params)
+
+    # get seed policy/value
+    theta = A3C_params.Pi
+    theta_v = A3C_params.V
 
     # seed each agent with networks
     goal_idx = 1
@@ -31,10 +44,6 @@ function A3C_Episode_Init(model, a3c_global_params)
             goal_idx += 1
         end
     end
-
-    # include global network params
-    model.A3C[:Global_Theta] = theta
-    model.A3C[:Global_Theta_v] = theta_v
 
 end
 

@@ -18,10 +18,6 @@ mutable struct FMP_Agent <: AbstractAgent
     Vp
 end
 
-mutable struct A3C_Global
-    Pi
-    V
-end
 
 ## define AgentBasedModel (ABM)
 
@@ -40,7 +36,6 @@ function FMP_Model(; num_agents=20, num_goals=num_agents, num_steps=1500)
                       :AgentHash=>Dict{Int128, Int128}(),
                       :GoalHash=>Dict{Int128, Int128}(),
                       :Goals=>Dict{Int64, Tuple{Float64, Float64}}(),
-                      :A3C=>Dict(),
                       :ModelStep=>1,
                      )
 
@@ -50,22 +45,40 @@ function FMP_Model(; num_agents=20, num_goals=num_agents, num_steps=1500)
 end
 
 function FMP_Epoch()
-    params = []
-    agent_data = FMP_Episode(params)
+
+    # set global hyperparams
+    num_agents = 20
+    num_goals = 20
+    num_steps = 1500
+    num_episodes = 100
+
+    # initialize stuff
+    state_dim = 3*num_goals+num_agents
+    A3C_params = A3C_Global(num_agents, 
+                            num_goals, 
+                            num_steps, 
+                            num_episodes,
+                            A3C_Policy_Init(state_dim, num_goals),
+                            A3C_Value_Init(),
+                           )
+    # train model
+    @showprogress for episode in 1:num_episodes
+        agent_data = FMP_Episode(A3C_params)
+        display(agent_data)
+        # train policy
+        # train value function
+    end
 end
 
 # Now that we've defined the plot utilities, lets re-run our simulation with
 # some additional options. We do this by redefining the model, re-adding the
 # agents but this time with a color parameter that is actually used. 
-function FMP_Episode(a3c_global_params)
-
-    # define FMP params
-    num_agents = 20
-    num_goals = 20
-    num_steps = 1500
+function FMP_Episode(A3C_params)
 
     # define model
-    model = FMP_Model(; num_agents=num_agents, num_goals=num_goals, num_steps=num_steps)
+    model = FMP_Model(; num_agents=A3C_params.num_agents, 
+                        num_goals=A3C_params.num_goals, 
+                        num_steps=A3C_params.num_steps)
     
     # initialize model by adding in agents
     LostHiker(model)
@@ -74,15 +87,12 @@ function FMP_Episode(a3c_global_params)
     StateSpaceHashing(model)
     
     # initialize the A3C struct
-    A3C_Episode_Init(model, a3c_global_params)
+    A3C_Episode_Init(model, A3C_params)
 
     # define agent/model step stuff
     function agent_step!(agent, model)
         move_agent!(agent, model, model.dt)
     end
-    # define progress meter (optional)
-    p = Progress(model.num_steps)
-
 
     function model_step!(model)
         # do FMP stuff - figure out interacting pairs and update velocities
@@ -97,9 +107,6 @@ function FMP_Episode(a3c_global_params)
         Reward(model)
         Action(model)  # if you comment this out it behaves as vanilla FMP
         model.ModelStep += 1
-        
-        # show progress
-        next!(p)
 
     end
 

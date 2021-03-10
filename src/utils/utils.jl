@@ -41,7 +41,6 @@ function RunModel(model, agent_step!, model_step!)
     
     for i in 1:model.num_steps
         step!(model, agent_step!, model_step!)
-        next!(p)
     end
 end
 
