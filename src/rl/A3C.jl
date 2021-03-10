@@ -3,6 +3,7 @@ mutable struct A3C_Global
     num_goals::Int64
     num_steps::Int64
     num_episodes::Int64
+    episode_number::Int64
     Pi
     V
 end

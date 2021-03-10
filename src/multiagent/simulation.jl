@@ -50,7 +50,7 @@ function FMP_Epoch()
     num_agents = 20
     num_goals = 20
     num_steps = 1500
-    num_episodes = 10
+    num_episodes = 100
 
     # initialize stuff
     state_dim = 3*num_goals+num_agents
@@ -58,11 +58,19 @@ function FMP_Epoch()
                             num_goals, 
                             num_steps, 
                             num_episodes,
+                            1,
                             A3C_Policy_Init(state_dim, num_goals),
                             A3C_Value_Init(),
                            )
     # train model
-    run_history = DataFrame(episode_num = Int64[], episode_data = Dict[])
+    run_history = DataFrame(episode_num = Int64[],
+                            step = Int64[],
+                            id = Int64[],
+                            type = Symbol[],
+                            State = Array[],
+                            Action = Int64[],
+                            Reward = Float64[],
+                           )
     write_path = "/Users/riomcmahon/Programming/antfarm/src/data_output/run_history.csv"
     try
         rm(write_path)
@@ -72,11 +80,16 @@ function FMP_Epoch()
     end
     @showprogress for episode in 1:num_episodes
         agent_data = FMP_Episode(A3C_params)
-        push!(run_history, [episode, agent_data])
-        CSV.write(write_path, run_history, append=true)
+        #if episode == 1
+        #    CSV.write(write_path, agent_data)  # remove append option to preserve header
+        #else
+        #    CSV.write(write_path, agent_data, append=true)
+        #end
+        append!(run_history, agent_data)
         #display(agent_data)
         # train policy
         # train value function
+        A3C_params.episode_number += 1
     end
 end
 
@@ -101,7 +114,11 @@ function FMP_Episode(A3C_params)
 
     # define agent/model step stuff
     function agent_step!(agent, model)
-        move_agent!(agent, model, model.dt)
+        try
+            move_agent!(agent, model, model.dt)
+        catch
+            println("I shit my pants")
+        end
     end
 
     function model_step!(model)
@@ -120,8 +137,9 @@ function FMP_Episode(A3C_params)
 
     end
 
-    agent_data = RunModelCollect(model, agent_step!, model_step!)
-    agent_data_dict = ProcessData(agent_data, model)
-    return agent_data_dict
+    raw_data = RunModelCollect(model, agent_step!, model_step!)
+    agent_data = raw_data[ [x==:A for x in raw_data.type], :]
+    insertcols!(agent_data, 1, :episode_num=>[A3C_params.episode_number for x in 1:nrow(agent_data)])
+    return agent_data
 end 
 
