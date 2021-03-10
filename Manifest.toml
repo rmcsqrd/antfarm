@@ -25,7 +25,7 @@ version = "3.2.0"
 
 [[Agents]]
 deps = ["DataFrames", "Distributed", "GraphRecipes", "LightGraphs", "LinearAlgebra", "OpenStreetMapX", "Random", "RecipesBase", "Requires", "StatsBase"]
-git-tree-sha1 = "bcb0e2ef2ececa0600408dd75e421e5f68ece733"
+git-tree-sha1 = "7f9fa57d029e3c03e137c7efef8ed7d8fa275ebb"
 repo-rev = "FMP"
 repo-url = "/Users/riomcmahon/Programming/Agents.jl"
 uuid = "46ada45e-f475-11e8-01d0-f70cc89e6671"
@@ -1016,10 +1016,10 @@ uuid = "647866c9-e3ac-4575-94e7-e3d426903924"
 version = "0.1.1"
 
 [[PooledArrays]]
-deps = ["DataAPI"]
-git-tree-sha1 = "b1333d4eced1826e15adbdf01a4ecaccca9d353c"
+deps = ["DataAPI", "Future"]
+git-tree-sha1 = "cde4ce9d6f33219465b55162811d8de8139c0414"
 uuid = "2dfb63ee-cc39-5dd5-95bd-886bf059d720"
-version = "0.5.3"
+version = "1.2.1"
 
 [[PrettyTables]]
 deps = ["Crayons", "Formatting", "Markdown", "Reexport", "Tables"]

@@ -50,7 +50,7 @@ function FMP_Epoch()
     num_agents = 20
     num_goals = 20
     num_steps = 1500
-    num_episodes = 100
+    num_episodes = 1
 
     # initialize stuff
     state_dim = 3*num_goals+num_agents
@@ -80,11 +80,11 @@ function FMP_Epoch()
     end
     @showprogress for episode in 1:num_episodes
         agent_data = FMP_Episode(A3C_params)
-        #if episode == 1
-        #    CSV.write(write_path, agent_data)  # remove append option to preserve header
-        #else
-        #    CSV.write(write_path, agent_data, append=true)
-        #end
+        if episode == 1
+            CSV.write(write_path, agent_data)  # remove append option to preserve header
+        else
+            CSV.write(write_path, agent_data, append=true)
+        end
         append!(run_history, agent_data)
         #display(agent_data)
         # train policy
@@ -115,9 +115,15 @@ function FMP_Episode(A3C_params)
     # define agent/model step stuff
     function agent_step!(agent, model)
         try
+            #println("agent id = ", agent.id, " vel = ", agent.vel, "pos =", agent.pos)
             move_agent!(agent, model, model.dt)
         catch
             println("I shit my pants")
+            println(agent)
+            println(agent.pos)
+            println(model.space.spacing)
+            println(agent.pos ./ model.space.spacing)
+            println(floor.(Int, agent.pos ./ model.space.spacing) .+ 1)
         end
     end
 
@@ -136,7 +142,7 @@ function FMP_Episode(A3C_params)
         model.ModelStep += 1
 
     end
-
+    RunModelPlot(model, agent_step!, model_step!)
     raw_data = RunModelCollect(model, agent_step!, model_step!)
     agent_data = raw_data[ [x==:A for x in raw_data.type], :]
     insertcols!(agent_data, 1, :episode_num=>[A3C_params.episode_number for x in 1:nrow(agent_data)])
