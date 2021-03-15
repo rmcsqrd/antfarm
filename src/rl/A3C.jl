@@ -4,29 +4,24 @@ mutable struct A3C_Global
     num_steps::Int64
     num_episodes::Int64
     episode_number::Int64
-    Pi
-    V
+    Pi # note that we share params
 end
 
 function A3C_Policy_Init(state_dim, num_goals)
     
     # build network
     layer1 = LSTM(state_dim, 128)
-    layer2 = LSTM(128, num_goals+1)
+    layer2 = LSTM(128, num_goals+2) # num goals, random action, V(si)
     theta = Chain(layer1, layer2) # theta is policy
     return theta
 end
 
-function A3C_Value_Init()
-    theta_v = 1  # BONE this is dummy
-    return theta_v
-end
 
 function A3C_Episode_Init(model, A3C_params)
 
     # get seed policy/value
+    # note that we share the same network
     theta = A3C_params.Pi
-    theta_v = A3C_params.V
 
     # seed each agent with networks
     goal_idx = 1
@@ -36,7 +31,6 @@ function A3C_Episode_Init(model, A3C_params)
         if model.agents[agent_id].type == :A
             i = model.AgentHash[hash(agent_id)]
             model.agents[agent_id].Pip = theta
-            model.agents[agent_id].Vp = theta_v
 
         # next, create dict of goals. key = RL index (1:num_goals; NOT
         # Agents.jl agent.id), value = Agents.jl agent.pos
@@ -76,8 +70,10 @@ end
 function PolicyEvaluate(model, agent_id)
     i = model.AgentHash[hash(agent_id)]
     state = GetSubstate(model, i)
-    action_dist = model.agents[agent_id].Pip(state)
-    action_dist = reshape(action_dist, (length(action_dist),))
+    policy_output = model.agents[agent_id].Pip(state)
+    pi_sa = policy_output[1:model.num_agents+1]  #pi(s,a)
+    vi_s = policy_output[length(policy_output)]  # v(s)
+    pi_sa = reshape(pi_sa, (length(pi_sa),))
    
     # generate action list
     actions = []
@@ -85,11 +81,11 @@ function PolicyEvaluate(model, agent_id)
     push!(actions, model.num_goals+1) # this is :random
 
     # get probabilities
-    probs = ProbabilityWeights(softmax(action_dist))
+    probs = ProbabilityWeights(softmax(pi_sa))
 
     # select action
-    action = sample(actions, ProbabilityWeights(action_dist))
-    return action  # returns an integer corresponding to goal or number larger than goals for random
+    action = sample(actions, probs)
+    return action, probs[action], vi_s  # returns an integer corresponding to goal or number larger than goals for random
 end
 
 

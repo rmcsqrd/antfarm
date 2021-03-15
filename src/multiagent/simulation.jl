@@ -11,11 +11,12 @@ mutable struct FMP_Agent <: AbstractAgent
     SSdims::NTuple{2, Float64}  ## include this for plotting
     Ni::Vector{Int64} ## array of neighboring agent IDs
     Gi::Vector{Int64} ## array of neighboring goal IDs
-    Action::Union{Int64, Symbol}
+    Action::Int64
+    PiAction::Float64
+    Value::Float64
     Reward::Float64
     State::Vector{Bool}
-    Pip
-    Vp
+    Pip  # share actor/critic params in network
 end
 
 
@@ -50,7 +51,7 @@ function FMP_Epoch()
     num_agents = 20
     num_goals = 20
     num_steps = 1500
-    num_episodes = 1
+    num_episodes = 10
 
     # initialize stuff
     state_dim = 3*num_goals+num_agents
@@ -60,7 +61,6 @@ function FMP_Epoch()
                             num_episodes,
                             1,
                             A3C_Policy_Init(state_dim, num_goals),
-                            A3C_Value_Init(),
                            )
     # train model
     run_history = DataFrame(episode_num = Int64[],
@@ -69,6 +69,8 @@ function FMP_Epoch()
                             type = Symbol[],
                             State = Array[],
                             Action = Int64[],
+                            PiAction = Float64[],
+                            Value = Float64[],
                             Reward = Float64[],
                            )
     write_path = "/Users/riomcmahon/Programming/antfarm/src/data_output/run_history.csv"
@@ -114,17 +116,7 @@ function FMP_Episode(A3C_params)
 
     # define agent/model step stuff
     function agent_step!(agent, model)
-        try
-            #println("agent id = ", agent.id, " vel = ", agent.vel, "pos =", agent.pos)
-            move_agent!(agent, model, model.dt)
-        catch
-            println("I shit my pants")
-            println(agent)
-            println(agent.pos)
-            println(model.space.spacing)
-            println(agent.pos ./ model.space.spacing)
-            println(floor.(Int, agent.pos ./ model.space.spacing) .+ 1)
-        end
+        move_agent!(agent, model, model.dt)
     end
 
     function model_step!(model)
@@ -142,10 +134,14 @@ function FMP_Episode(A3C_params)
         model.ModelStep += 1
 
     end
-    RunModelPlot(model, agent_step!, model_step!)
     raw_data = RunModelCollect(model, agent_step!, model_step!)
     agent_data = raw_data[ [x==:A for x in raw_data.type], :]
     insertcols!(agent_data, 1, :episode_num=>[A3C_params.episode_number for x in 1:nrow(agent_data)])
+
+    if A3C_params.episode_number == A3C_params.num_episodes
+        RunModelPlot(model, agent_step!, model_step!)
+    end
+
     return agent_data
 end 
 

@@ -93,7 +93,7 @@ function Action(model)
     for agent_id in keys(model.agents)
         if model.agents[agent_id].type == :A
             i = model.AgentHash[hash(agent_id)]
-            selected_action = PolicyEvaluate(model, agent_id)
+            selected_action, pi_sa, vi_s  = PolicyEvaluate(model, agent_id)
             
             # Symbols don't play nice with data recording:
             #   a number larger than model.num_goals implies random
@@ -112,6 +112,8 @@ function Action(model)
                 end
             end
             model.agents[agent_id].Action = selected_action
+            model.agents[agent_id].PiAction = pi_sa
+            model.agents[agent_id].Value = vi_s
         end
     end
 end

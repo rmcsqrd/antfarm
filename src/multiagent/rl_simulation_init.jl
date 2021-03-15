@@ -19,9 +19,9 @@ function LostHiker(model)
         color = AgentInitColor(i, model.num_agents)
 
         # seed agents with random positions initially
-        add_agent!(pos, model, vel, rand_pos(), color, :A, radius, model.space.extent, [], [], 0, 0.0, [], [], [])
+        add_agent!(pos, model, vel, rand_pos(), color, :A, radius, model.space.extent, [], [], 0, 0.0, 0.0, 0.0, [], [])
 
         # add targets normally
-        add_agent!(tau, model, vel, tau, color, :T, radius, model.space.extent, [], [], 0, 0.0, [], [], [])
+        add_agent!(tau, model, vel, tau, color, :T, radius, model.space.extent, [], [], 0, 0.0, 0.0, 0.0, [], [])
     end
 end
