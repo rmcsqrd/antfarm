@@ -15,6 +15,7 @@ using StatsBase
 using Agents
 using InteractiveDynamics
 using DataFrames
+using BSON
 import CairoMakie
 
 

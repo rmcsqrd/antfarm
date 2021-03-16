@@ -13,7 +13,7 @@ function A3C_Policy_Init(state_dim, num_goals)
     
     # build network
     theta = Chain(
-                  Dense(state_dim, 128, relu),
+                  Dense(state_dim, 128, tanh),
                   LSTM(128, num_goals+2) # num goals, random action, V(si)
                  )
     return theta
@@ -97,28 +97,34 @@ function PolicyTrain(agent_data, A3C_params)
     opt = ADAM()
     global_reward = 0
     policy = A3C_params.Pi
-    temp_policy = A3C_params.Pi
     for id in agent_ids
+
+        # get individual agent dataframe
         agent_df = agent_data[ [x==id for x in agent_data.id], :]
         R = last(agent_df).Value
-        for t in reverse(1:A3C_params.num_steps-1)
-            step_data = agent_df[ [step == t for step in agent_df.step], :]
 
-            # note all this [1] nonsense is because step_data is a 1x9 df
-            ri = step_data.Reward[1]
-            vi = step_data.Value[1]
-            pi_sa = step_data.PiAction[1]
-            R += ri + A3C_params.gamma*R
-            ps = params(policy)
-            A_sa = R-vi  # Advantage(s,a)
+        # get training data
+        tmax = size(agent_df)[1]
+        rewards = agent_df.Reward[1:tmax-1]
+        values = agent_df.Value[1:tmax-1]
+        states = agent_df.State[1:tmax-1]  # states from 1:t-1, needs to be reversed
+        pi_action = agent_df.PiAction[1:tmax-1]
+        advantages = zeros(tmax-1)
 
-            # update actor gradients based on loss from critic
-            actor_gradients = gradient(() -> log(pi_sa)*A_sa, ps)
+        # do some calculations and training
+        ps = params(policy)
+        for i in reverse(1:tmax-1)
+
+            # comput advantage
+            R = rewards[i] + A3C_params.gamma*R
+            advantages[i] = R - values[i]  # advantages for reverse order
+
+            # update policy
+            actor_gradients = gradient(() -> log(pi_action[i])*advantages[i], ps)
             update!(opt, ps, actor_gradients)
 
-            # update critic gradients
-            critic_gradients = gradient(() -> A_sa^2, ps)
-            update!(opt, ps, actor_gradients)
+            critic_gradients = gradient(() -> advantages[i]^2, ps)
+            update!(opt, ps, critic_gradients)
         end
         global_reward += R
         

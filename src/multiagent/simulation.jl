@@ -75,9 +75,10 @@ function FMP_Epoch()
                             Value = Float64[],
                             Reward = Float64[],
                            )
-    write_path = "/Users/riomcmahon/Programming/antfarm/src/data_output/run_history.csv"
+    csv_write_path = "/Users/riomcmahon/Programming/antfarm/src/data_output/run_history.csv"
+    model_write_path = "/Users/riomcmahon/Programming/antfarm/src/data_output/model_weights/"
     try
-        rm(write_path)
+        rm(csv_write_path)
         println("run_history.csv overwritten")
     catch
         println("run_history.csv doesn't exist, moving on")
@@ -86,14 +87,17 @@ function FMP_Epoch()
         println("\nEpoch #$episode of $num_episodes")
         agent_data = FMP_Episode(A3C_params)
         if episode == 1
-            CSV.write(write_path, agent_data)  # remove append option to preserve header
+            CSV.write(csv_write_path, agent_data)  # remove append option to preserve header
         elseif episode % 20 == 0 # only record every hundred steps
-            CSV.write(write_path, agent_data, append=true)
+            CSV.write(csv_write_path, agent_data, append=true)
         end
-        #append!(run_history, agent_data)
 
         # train policy
         PolicyTrain(agent_data, A3C_params)
+
+        # save weights
+        epnum = A3C_params.episode_number
+        bson(string(model_write_path, "weights_epnum$epnum.bson"), Dict(:Policy => A3C_params.Pi))
 
         # step model forward
         A3C_params.episode_number += 1
@@ -143,9 +147,11 @@ function FMP_Episode(A3C_params)
     agent_data = raw_data[ [x==:A for x in raw_data.type], :]
     insertcols!(agent_data, 1, :episode_num=>[A3C_params.episode_number for x in 1:nrow(agent_data)])
 
-    if A3C_params.episode_number == A3C_params.num_episodes
-        @info "last training epoch, plotting result"
-        RunModelPlot(model, agent_step!, model_step!)
+    if A3C_params.episode_number % 100 == 0
+        @info "100 episodes completed, plotting result"
+        ep_num = A3C_params.episode_number
+        filepath = "/Users/riomcmahon/Desktop/episode_$ep_num.mp4"
+        RunModelPlot(model, agent_step!, model_step!, filepath)
     end
 
     return agent_data

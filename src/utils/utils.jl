@@ -47,9 +47,8 @@ end
 """
 Run model and create output plot
 """
-function RunModelPlot(model, agent_step!, model_step!)
+function RunModelPlot(model, agent_step!, model_step!, filepath)
     # delete original file
-    filepath = "/Users/riomcmahon/Desktop/circle_swap.mp4"
     try
         rm(filepath)
     catch

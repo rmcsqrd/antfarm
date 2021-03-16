@@ -108,7 +108,8 @@ function Action(model)
                     model.agents[agent_id].tau = model.Goals[action]
                 else
                     # else more randomly
-                    model.agents[agent_id].tau = Tuple(rand(2))
+                    model.agents[agent_id].tau = model.Goals[action]
+                    #model.agents[agent_id].tau = Tuple(rand(2))
                 end
             end
             model.agents[agent_id].Action = selected_action
