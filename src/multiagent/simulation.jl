@@ -51,7 +51,8 @@ function FMP_Epoch()
     num_agents = 20
     num_goals = 20
     num_steps = 1500
-    num_episodes = 10
+    num_episodes = 1000
+    discount_factor = 0.95
 
     # initialize stuff
     state_dim = 3*num_goals+num_agents
@@ -61,6 +62,7 @@ function FMP_Epoch()
                             num_episodes,
                             1,
                             A3C_Policy_Init(state_dim, num_goals),
+                            discount_factor,
                            )
     # train model
     run_history = DataFrame(episode_num = Int64[],
@@ -80,17 +82,20 @@ function FMP_Epoch()
     catch
         println("run_history.csv doesn't exist, moving on")
     end
-    @showprogress for episode in 1:num_episodes
+    for episode in 1:num_episodes
+        println("\nEpoch #$episode of $num_episodes")
         agent_data = FMP_Episode(A3C_params)
         if episode == 1
             CSV.write(write_path, agent_data)  # remove append option to preserve header
-        else
+        elseif episode % 20 == 0 # only record every hundred steps
             CSV.write(write_path, agent_data, append=true)
         end
-        append!(run_history, agent_data)
-        #display(agent_data)
+        #append!(run_history, agent_data)
+
         # train policy
-        # train value function
+        PolicyTrain(agent_data, A3C_params)
+
+        # step model forward
         A3C_params.episode_number += 1
     end
 end
@@ -139,6 +144,7 @@ function FMP_Episode(A3C_params)
     insertcols!(agent_data, 1, :episode_num=>[A3C_params.episode_number for x in 1:nrow(agent_data)])
 
     if A3C_params.episode_number == A3C_params.num_episodes
+        @info "last training epoch, plotting result"
         RunModelPlot(model, agent_step!, model_step!)
     end
 
