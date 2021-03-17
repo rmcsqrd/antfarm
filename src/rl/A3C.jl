@@ -5,26 +5,12 @@ mutable struct A3C_Global
     num_steps::Int64
     num_episodes::Int64
     episode_number::Int64
-    Pi # note that we share params
+    model # this is the model architecture
+    θ     # this is the set of parameters. We share params so θ = θ_v
     gamma::Float64
 end
 
-function A3C_Policy_Init(state_dim, num_goals)
-    
-    # build network
-    theta = Chain(
-                  Dense(state_dim, 128, tanh),
-                  LSTM(128, num_goals+2) # num goals, random action, V(si)
-                 )
-    return theta
-end
-
-
 function A3C_Episode_Init(model, A3C_params)
-
-    # get seed policy/value
-    # note that we share the same network
-    theta = A3C_params.Pi
 
     # seed each agent with networks
     goal_idx = 1
@@ -33,9 +19,9 @@ function A3C_Episode_Init(model, A3C_params)
         # first, assign policy to agents
         if model.agents[agent_id].type == :A
             i = model.AgentHash[hash(agent_id)]
-            model.agents[agent_id].Pip = theta
+            model.agents[agent_id].Model = A3C_params.model
 
-        # next, create dict of goals. key = RL index (1:num_goals; NOT
+        # create dict of goals. key = RL index (1:num_goals; NOT
         # Agents.jl agent.id), value = Agents.jl agent.pos
         elseif model.agents[agent_id].type == :T
             model.Goals[goal_idx] = model.agents[agent_id].pos
@@ -73,7 +59,7 @@ end
 function PolicyEvaluate(model, agent_id)
     i = model.AgentHash[hash(agent_id)]
     state = GetSubstate(model, i)
-    policy_output = model.agents[agent_id].Pip(state)
+    policy_output = model.agents[agent_id].Model(state)
     pi_sa = policy_output[1:model.num_agents+1]  #pi(s,a)
     vi_s = policy_output[length(policy_output)]  # v(s)
     pi_sa = reshape(pi_sa, (length(pi_sa),))
@@ -96,7 +82,6 @@ function PolicyTrain(agent_data, A3C_params)
     agent_ids = agent_data[1:A3C_params.num_agents, :].id
     opt = ADAM()
     global_reward = 0
-    policy = A3C_params.Pi
     for id in agent_ids
 
         # get individual agent dataframe
@@ -111,8 +96,7 @@ function PolicyTrain(agent_data, A3C_params)
         pi_action = agent_df.PiAction[1:tmax-1]
         advantages = zeros(tmax-1)
 
-        # do some calculations and training
-        ps = params(policy)
+        # build training data
         for i in reverse(1:tmax-1)
 
             # comput advantage
@@ -120,14 +104,14 @@ function PolicyTrain(agent_data, A3C_params)
             advantages[i] = R - values[i]  # advantages for reverse order
 
             # update policy
-            actor_gradients = gradient(() -> log(pi_action[i])*advantages[i], ps)
-            update!(opt, ps, actor_gradients)
+            actor_gradients = gradient(() -> log(pi_action[i])*advantages[i], A3C_params.θ)
+            update!(opt, A3C_params.θ, actor_gradients)
 
-            critic_gradients = gradient(() -> advantages[i]^2, ps)
-            update!(opt, ps, critic_gradients)
+            critic_gradients = gradient(() -> advantages[i]^2, A3C_params.θ)
+            update!(opt, A3C_params.θ, critic_gradients)
         end
         global_reward += R
         
     end
-    println("Global Reward for Epoch = $global_reward")
+    return global_reward
 end

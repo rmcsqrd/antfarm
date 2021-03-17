@@ -26,7 +26,7 @@ end
 
 function StateTransition(model)
     # Goal Occupation  
-    # clear goal interactions then update
+    # clear goal interactions then update goal occupation/goal awareness
     model.SS.GO = zeros(Bool, size(model.SS.GO))
     for agent_id in keys(model.agents)
         if model.agents[agent_id].type == :A
@@ -34,6 +34,7 @@ function StateTransition(model)
             for goal_id in model.agents[i].Gi
                 g = model.GoalHash[hash(goal_id)]
                 model.SS.GO[i,g] = 1
+                model.SS.GA[i,g] = 1
             end
         end
     end
@@ -44,6 +45,7 @@ function StateTransition(model)
     for agent_id in keys(model.agents)
         if model.agents[agent_id].type == :A
             i = model.AgentHash[hash(agent_id)]
+
             for neighbor_id in model.agents[i].Ni
 
                 # first update agent interactions
@@ -100,16 +102,17 @@ function Action(model)
             #   (see PolicyEvaluate)
             if selected_action > model.num_goals
                 model.agents[agent_id].tau = Tuple(rand(2))
+                #println("Random action: ",model.agents[agent_id].tau)
             else
 
                 # if agent knows location of target (which is also represented
                 # as an agent), then give it the target location
                 if model.SS.GA[i, selected_action] == 1
-                    model.agents[agent_id].tau = model.Goals[action]
+                    model.agents[agent_id].tau = model.Goals[selected_action]
                 else
-                    # else more randomly
-                    model.agents[agent_id].tau = model.Goals[action]
-                    #model.agents[agent_id].tau = Tuple(rand(2))
+                    # else stay in current position and incur penalty
+                    model.agents[agent_id].Reward -= 1
+                    model.agents[agent_id].tau = model.agents[agent_id].pos
                 end
             end
             model.agents[agent_id].Action = selected_action

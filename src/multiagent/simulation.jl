@@ -16,7 +16,7 @@ mutable struct FMP_Agent <: AbstractAgent
     Value::Float64
     Reward::Float64
     State::Vector{Bool}
-    Pip  # share actor/critic params in network
+    Model  # this is the model used to evaluate actions
 end
 
 
@@ -50,18 +50,24 @@ function FMP_Epoch()
     # set global hyperparams
     num_agents = 20
     num_goals = 20
-    num_steps = 1500
+    num_steps = 3000
     num_episodes = 1000
     discount_factor = 0.95
 
     # initialize stuff
     state_dim = 3*num_goals+num_agents
+    model = Chain(
+                  Dense(state_dim, 128, tanh),
+                  LSTM(128, num_goals+2) # num goals, random action, V(si)
+                 )
+    θ = params(model)
     A3C_params = A3C_Global(num_agents, 
                             num_goals, 
                             num_steps, 
                             num_episodes,
                             1,
-                            A3C_Policy_Init(state_dim, num_goals),
+                            model,
+                            θ,
                             discount_factor,
                            )
     # train model
@@ -77,28 +83,41 @@ function FMP_Epoch()
                            )
     csv_write_path = "/Users/riomcmahon/Programming/antfarm/src/data_output/run_history.csv"
     model_write_path = "/Users/riomcmahon/Programming/antfarm/src/data_output/model_weights/"
+    reward_write_path = "/Users/riomcmahon/Programming/antfarm/src/data_output/reward_hist.bson"
     try
         rm(csv_write_path)
         println("run_history.csv overwritten")
     catch
         println("run_history.csv doesn't exist, moving on")
     end
+    reward_hist = zeros(num_episodes)
     for episode in 1:num_episodes
         println("\nEpoch #$episode of $num_episodes")
-        agent_data = FMP_Episode(A3C_params)
-        if episode == 1
-            CSV.write(csv_write_path, agent_data)  # remove append option to preserve header
-        elseif episode % 20 == 0 # only record every hundred steps
-            CSV.write(csv_write_path, agent_data, append=true)
+
+        if episode % 1 == 0
+            FMP_Episode(A3C_params, plot_sim=true)
+
+        else
+
+            agent_data = FMP_Episode(A3C_params)
+            if episode == 1
+                CSV.write(csv_write_path, agent_data)  # remove append option to preserve header
+            elseif episode % 20 == 0 # only record every hundred steps
+                CSV.write(csv_write_path, agent_data, append=true)
+            end
+
+            # train policy, collect reward, save
+            epoch_reward = PolicyTrain(agent_data, A3C_params)
+            reward_hist[episode] = epoch_reward
+            bson(reward_write_path, Dict(:Rewards=>reward_hist))
+            println("Global Reward for Epoch = $epoch_reward")
+
+            println(model.SS.AI)
+
+            # save weights
+            epnum = A3C_params.episode_number
+            bson(string(model_write_path, "weights_epnum$epnum.bson"), Dict(:Policy => A3C_params.model))
         end
-
-        # train policy
-        PolicyTrain(agent_data, A3C_params)
-
-        # save weights
-        epnum = A3C_params.episode_number
-        bson(string(model_write_path, "weights_epnum$epnum.bson"), Dict(:Policy => A3C_params.Pi))
-
         # step model forward
         A3C_params.episode_number += 1
     end
@@ -107,7 +126,7 @@ end
 # Now that we've defined the plot utilities, lets re-run our simulation with
 # some additional options. We do this by redefining the model, re-adding the
 # agents but this time with a color parameter that is actually used. 
-function FMP_Episode(A3C_params)
+function FMP_Episode(A3C_params; plot_sim=false)
 
     # define model
     model = FMP_Model(; num_agents=A3C_params.num_agents, 
@@ -143,17 +162,18 @@ function FMP_Episode(A3C_params)
         model.ModelStep += 1
 
     end
-    raw_data = RunModelCollect(model, agent_step!, model_step!)
-    agent_data = raw_data[ [x==:A for x in raw_data.type], :]
-    insertcols!(agent_data, 1, :episode_num=>[A3C_params.episode_number for x in 1:nrow(agent_data)])
 
-    if A3C_params.episode_number % 100 == 0
-        @info "100 episodes completed, plotting result"
+    if plot_sim == true
+        @info "plotting simulation"
         ep_num = A3C_params.episode_number
         filepath = "/Users/riomcmahon/Desktop/episode_$ep_num.mp4"
         RunModelPlot(model, agent_step!, model_step!, filepath)
-    end
+    else
+        raw_data = RunModelCollect(model, agent_step!, model_step!)
+        agent_data = raw_data[ [x==:A for x in raw_data.type], :]
+        insertcols!(agent_data, 1, :episode_num=>[A3C_params.episode_number for x in 1:nrow(agent_data)])
 
-    return agent_data
+        return agent_data
+    end
 end 
 
