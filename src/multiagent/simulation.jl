@@ -112,7 +112,6 @@ function FMP_Epoch()
             bson(reward_write_path, Dict(:Rewards=>reward_hist))
             println("Global Reward for Epoch = $epoch_reward")
 
-            println(model.SS.AI)
 
             # save weights
             epnum = A3C_params.episode_number
@@ -148,17 +147,19 @@ function FMP_Episode(A3C_params; plot_sim=false)
     end
 
     function model_step!(model)
+        # do RL stuff 
+        StateTransition(model)
+        Reward(model)
+        Action(model)  # if you comment this out it behaves as vanilla FMP
+
         # do FMP stuff - figure out interacting pairs and update velocities
         # accordingly
         FMP_Update_Interacting_Pairs(model)
         for agent_id in keys(model.agents)
             FMP_Update_Vel(model.agents[agent_id], model)
         end
-
-        # do RL stuff 
-        StateTransition(model)
-        Reward(model)
-        Action(model)  # if you comment this out it behaves as vanilla FMP
+        
+        # step model
         model.ModelStep += 1
 
     end

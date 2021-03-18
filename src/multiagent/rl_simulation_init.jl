@@ -9,7 +9,7 @@ function LostHiker(model)
 
     for i in 1:model.num_agents
         # set agent params
-        pos = starting_pos
+        pos = starting_pos .+ (rand(0:0.00001:0.0001), rand(0:0.00001:0.0001))
         vel = (0,0)
         tau = (rand(0:0.01:x), rand(0:0.01:y))
         radius = model.FMP_params.d/2
@@ -19,6 +19,6 @@ function LostHiker(model)
         add_agent!(pos, model, vel, pos, color, :A, radius, model.space.extent, [], [], 0, 0.0, 0.0, 0.0, [], [])
 
         # add targets normally
-        add_agent!(tau, model, vel, tau, color, :T, radius, model.space.extent, [], [], 0, 0.0, 0.0, 0.0, [], [])
+        add_agent!(tau, model, vel, tau, color, :T, radius, model.space.extent, [], [], 0, 0.0, 0.0, 0.0, [],  [])
     end
 end

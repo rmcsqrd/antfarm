@@ -100,9 +100,9 @@ function Action(model)
             # Symbols don't play nice with data recording:
             #   a number larger than model.num_goals implies random
             #   (see PolicyEvaluate)
+            randloc(SSdims) = (rand(0:SSdims[1]/10:SSdims[1]), rand(0:SSdims[2]/10:SSdims[2]))
             if selected_action > model.num_goals
-                model.agents[agent_id].tau = Tuple(rand(2))
-                #println("Random action: ",model.agents[agent_id].tau)
+                model.agents[agent_id].tau = randloc(model.agents[agent_id].SSdims)
             else
 
                 # if agent knows location of target (which is also represented
