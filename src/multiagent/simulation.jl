@@ -24,7 +24,7 @@ end
 
 function FMP_Model(; num_agents=20, num_goals=num_agents, num_steps=1500)
     properties = Dict(:FMP_params=>FMP_Parameter_Init(),
-                      :dt => 0.01,
+                      :dt => 0.05,
                       :num_agents=>num_agents,
                       :num_goals=>num_goals,
                       :num_steps=>num_steps,
@@ -50,8 +50,8 @@ function FMP_Epoch()
     # set global hyperparams
     num_agents = 20
     num_goals = 20
-    num_steps = 3000
-    num_episodes = 1000
+    num_steps = 10000
+    num_episodes = 10000
     discount_factor = 0.95
 
     # initialize stuff
@@ -94,7 +94,7 @@ function FMP_Epoch()
     for episode in 1:num_episodes
         println("\nEpoch #$episode of $num_episodes")
 
-        if episode % 1 == 0
+        if episode % 100 == 0
             FMP_Episode(A3C_params, plot_sim=true)
 
         else

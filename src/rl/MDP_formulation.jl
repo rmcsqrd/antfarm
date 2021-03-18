@@ -102,17 +102,22 @@ function Action(model)
             #   (see PolicyEvaluate)
             randloc(SSdims) = (rand(0:SSdims[1]/10:SSdims[1]), rand(0:SSdims[2]/10:SSdims[2]))
             if selected_action > model.num_goals
-                model.agents[agent_id].tau = randloc(model.agents[agent_id].SSdims)
+                random_actions = [(1,0) (0,1) (-1,0) (0,-1)]
+                prob = ProbabilityWeights([0.25;0.25;0.25;0.25])
+                model.agents[agent_id].tau = model.agents[agent_id].tau .+ sample(random_actions, prob)
+                #println("Random action selected: ",model.agents[agent_id].tau)
             else
 
                 # if agent knows location of target (which is also represented
                 # as an agent), then give it the target location
                 if model.SS.GA[i, selected_action] == 1
                     model.agents[agent_id].tau = model.Goals[selected_action]
+                    #println("Goal action selected (sucessful): ",model.agents[agent_id].tau)
                 else
                     # else stay in current position and incur penalty
-                    model.agents[agent_id].Reward -= 1
+                    model.agents[agent_id].Reward -= 0.1
                     model.agents[agent_id].tau = model.agents[agent_id].pos
+                    #println("Goal action selected (unsucessful): ",model.agents[agent_id].tau)
                 end
             end
             model.agents[agent_id].Action = selected_action
