@@ -100,11 +100,10 @@ function Action(model)
             # Symbols don't play nice with data recording:
             #   a number larger than model.num_goals implies random
             #   (see PolicyEvaluate)
-            randloc(SSdims) = (rand(0:SSdims[1]/10:SSdims[1]), rand(0:SSdims[2]/10:SSdims[2]))
             if selected_action > model.num_goals
-                random_actions = [(1,0) (0,1) (-1,0) (0,-1)]
-                prob = ProbabilityWeights([0.25;0.25;0.25;0.25])
-                model.agents[agent_id].tau = model.agents[agent_id].tau .+ sample(random_actions, prob)
+                action = model.agents[agent_id].tau .+ model.Actions[selected_action-model.num_goals]  # subtract offset of num goals for action index
+
+                model.agents[agent_id].tau = action
                 #println("Random action selected: ",model.agents[agent_id].tau)
             else
 

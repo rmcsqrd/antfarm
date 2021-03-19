@@ -35,6 +35,7 @@ function FMP_Model(; num_agents=20, num_goals=num_agents, num_steps=1500)
                              zeros(Bool, num_agents, num_agents), # AI
                             ),
                       :AgentHash=>Dict{Int128, Int128}(),
+                      :Actions=>[(1,0), (0,1), (-1,0), (0,-1)],
                       :GoalHash=>Dict{Int128, Int128}(),
                       :Goals=>Dict{Int64, Tuple{Float64, Float64}}(),
                       :ModelStep=>1,
@@ -50,7 +51,7 @@ function FMP_Epoch()
     # set global hyperparams
     num_agents = 20
     num_goals = 20
-    num_steps = 10000
+    num_steps = 5000
     num_episodes = 10000
     discount_factor = 0.95
 
@@ -58,7 +59,7 @@ function FMP_Epoch()
     state_dim = 3*num_goals+num_agents
     model = Chain(
                   Dense(state_dim, 128, tanh),
-                  LSTM(128, num_goals+2) # num goals, random action, V(si)
+                  LSTM(128, num_goals+4+1) # num goals, actions, V(si)
                  )
     θ = params(model)
     A3C_params = A3C_Global(num_agents, 
@@ -70,27 +71,15 @@ function FMP_Epoch()
                             θ,
                             discount_factor,
                            )
-    # train model
-    run_history = DataFrame(episode_num = Int64[],
-                            step = Int64[],
-                            id = Int64[],
-                            type = Symbol[],
-                            State = Array[],
-                            Action = Int64[],
-                            PiAction = Float64[],
-                            Value = Float64[],
-                            Reward = Float64[],
-                           )
+
+    # setup prelim stuff for data recording
     csv_write_path = "/Users/riomcmahon/Programming/antfarm/src/data_output/run_history.csv"
     model_write_path = "/Users/riomcmahon/Programming/antfarm/src/data_output/model_weights/"
     reward_write_path = "/Users/riomcmahon/Programming/antfarm/src/data_output/reward_hist.bson"
-    try
-        rm(csv_write_path)
-        println("run_history.csv overwritten")
-    catch
-        println("run_history.csv doesn't exist, moving on")
-    end
     reward_hist = zeros(num_episodes)
+    time_hist = zeros(num_episodes)
+    
+    # train model
     for episode in 1:num_episodes
         println("\nEpoch #$episode of $num_episodes")
 
@@ -99,18 +88,19 @@ function FMP_Epoch()
 
         else
 
+            start_time = time()
             agent_data = FMP_Episode(A3C_params)
-            if episode == 1
-                CSV.write(csv_write_path, agent_data)  # remove append option to preserve header
-            elseif episode % 20 == 0 # only record every hundred steps
-                CSV.write(csv_write_path, agent_data, append=true)
-            end
 
             # train policy, collect reward, save
             epoch_reward = PolicyTrain(agent_data, A3C_params)
+
+            end_time = time()
             reward_hist[episode] = epoch_reward
-            bson(reward_write_path, Dict(:Rewards=>reward_hist))
+            time_hist[episode] = end_time-start_time
+            bson(reward_write_path, Dict(:Rewards=>reward_hist,
+                                         :TimeHist=>time_hist))
             println("Global Reward for Epoch = $epoch_reward")
+            println("Time Elapsed for Epoch = ", end_time-start_time)
 
 
             # save weights

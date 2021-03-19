@@ -39,20 +39,19 @@ function GetSubstate(model, i)
         GIi = model.SS.GI[i, :]
         AIi = model.SS.AI[i, :]
 
-        flattened_state = state_flatten(GAi, GOi, GIi, AIi)
+        input_reshape(x) = reshape(x, (prod(size(x)), 1))
+        flattened_state = [
+                        input_reshape(GAi);
+                        input_reshape(GOi);
+                        input_reshape(GIi);
+                        input_reshape(AIi)
+                        ]
         return reshape(flattened_state, (length(flattened_state),))
     
 end
 
 function state_flatten(GAi, GOi, GIi, AIi)
-    input_reshape(x) = reshape(x, (prod(size(x)), 1))
 
-    flatten_state = [
-                        input_reshape(GAi);
-                        input_reshape(GOi);
-                        input_reshape(GIi);
-                        input_reshape(AIi)
-                    ]
     return flatten_state
 end
 
@@ -60,14 +59,14 @@ function PolicyEvaluate(model, agent_id)
     i = model.AgentHash[hash(agent_id)]
     state = GetSubstate(model, i)
     policy_output = model.agents[agent_id].Model(state)
-    pi_sa = policy_output[1:model.num_agents+1]  #pi(s,a)
+    pi_sa = policy_output[1:model.num_agents+length(model.Actions)]  #pi(s,a)
     vi_s = policy_output[length(policy_output)]  # v(s)
     pi_sa = reshape(pi_sa, (length(pi_sa),))
    
     # generate action list
     actions = []
     [push!(actions, x) for x in 1:model.num_goals]
-    push!(actions, model.num_goals+1) # this is :random
+    [push!(actions, x) for x in model.num_goals+1:model.num_goals+length(model.Actions)] 
 
     # get probabilities
     probs = ProbabilityWeights(softmax(pi_sa))
@@ -104,11 +103,9 @@ function PolicyTrain(agent_data, A3C_params)
             advantages[i] = R - values[i]  # advantages for reverse order
 
             # update policy
-            actor_gradients = gradient(() -> log(pi_action[i])*advantages[i], A3C_params.θ)
-            update!(opt, A3C_params.θ, actor_gradients)
+            gradients = gradient(() -> log(pi_action[i])*advantages[i]+advantages[i]^2, A3C_params.θ)  # loss is function of critic eval of actor and critic itself
+            update!(opt, A3C_params.θ, gradients)
 
-            critic_gradients = gradient(() -> advantages[i]^2, A3C_params.θ)
-            update!(opt, A3C_params.θ, critic_gradients)
         end
         global_reward += R
         
