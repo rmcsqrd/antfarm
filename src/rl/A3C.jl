@@ -50,11 +50,6 @@ function GetSubstate(model, i)
     
 end
 
-function state_flatten(GAi, GOi, GIi, AIi)
-
-    return flatten_state
-end
-
 function PolicyEvaluate(model, agent_id)
     i = model.AgentHash[hash(agent_id)]
     state = GetSubstate(model, i)
@@ -79,7 +74,7 @@ end
 function PolicyTrain(agent_data, A3C_params)
 
     agent_ids = agent_data[1:A3C_params.num_agents, :].id
-    opt = ADAM()
+    opt = RMSProp()
     global_reward = 0
     for id in agent_ids
 
@@ -89,26 +84,44 @@ function PolicyTrain(agent_data, A3C_params)
 
         # get training data
         tmax = size(agent_df)[1]
+        data = Array{Tuple{Float64, Float64}}(undef, tmax)
         rewards = agent_df.Reward[1:tmax-1]
         values = agent_df.Value[1:tmax-1]
-        states = agent_df.State[1:tmax-1]  # states from 1:t-1, needs to be reversed
         pi_action = agent_df.PiAction[1:tmax-1]
         advantages = zeros(tmax-1)
 
         # build training data
         for i in reverse(1:tmax-1)
 
-            # comput advantage
+            # compute advantage
             R = rewards[i] + A3C_params.gamma*R
             advantages[i] = R - values[i]  # advantages for reverse order
-
-            # update policy
-            gradients = gradient(() -> log(pi_action[i])*advantages[i]+advantages[i]^2, A3C_params.θ)  # loss is function of critic eval of actor and critic itself
-            update!(opt, A3C_params.θ, gradients)
-
+            data[i] = (pi_action[i], advantages[i])
         end
-        global_reward += R
+        global_reward += sum(rewards)
         
+        # create loss functions
+        actor_loss_function(π_sa, A_sa) = log(π_sa)*A_sa
+        critic_loss_function(π_sa, A_sa) = A_sa^2
+        local actor_loss, critic_loss
+
+        # train model
+        for d in data
+            
+            # start with actor gradients
+            dθ = gradient(A3C_params.θ) do
+                actor_loss = actor_loss_function(d...)
+                return actor_loss
+            end
+            update!(opt, A3C_params.θ, dθ)
+
+            # next do critic gradients
+            dθ_v = gradient(A3C_params.θ) do
+                critic_loss = critic_loss_function(d...)
+                return critic_loss
+            end
+            update!(opt, A3C_params.θ, dθ_v)
+        end
     end
     return global_reward
 end
