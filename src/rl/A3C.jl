@@ -85,18 +85,25 @@ function PolicyTrain(agent_data, A3C_params)
         # get training data
         tmax = size(agent_df)[1]
         data = Array{Tuple{Float64, Float64}}(undef, tmax)
+        [data[i] = (0.0,0.0) for i in 1:length(data)]
         rewards = agent_df.Reward[1:tmax-1]
         values = agent_df.Value[1:tmax-1]
         pi_action = agent_df.PiAction[1:tmax-1]
         advantages = zeros(tmax-1)
 
         # build training data
-        for i in reverse(1:tmax-1)
+        for t in reverse(1:tmax-1)
 
             # compute advantage
-            R = rewards[i] + A3C_params.gamma*R
-            advantages[i] = R - values[i]  # advantages for reverse order
-            data[i] = (pi_action[i], advantages[i])
+            R = rewards[t] + A3C_params.gamma*R
+            advantages[t] = R - values[t]  # advantages for reverse order
+            if pi_action[t] < 0
+                @error "π_sa term is fucked"
+                println("Reward = ", rewards[t])
+                println("values = ", values[t])
+                println("pi_action = ", pi_action[t])
+            end
+            data[t] = (pi_action[t], advantages[t])
         end
         global_reward += sum(rewards)
         
@@ -110,14 +117,14 @@ function PolicyTrain(agent_data, A3C_params)
             
             # start with actor gradients
             dθ = gradient(A3C_params.θ) do
-                actor_loss = actor_loss_function(d...)
+                actor_loss = actor_loss_function(d[1], d[2])
                 return actor_loss
             end
             update!(opt, A3C_params.θ, dθ)
 
             # next do critic gradients
             dθ_v = gradient(A3C_params.θ) do
-                critic_loss = critic_loss_function(d...)
+                critic_loss = critic_loss_function(d[1], d[2])
                 return critic_loss
             end
             update!(opt, A3C_params.θ, dθ_v)
