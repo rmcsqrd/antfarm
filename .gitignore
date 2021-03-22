@@ -4,3 +4,4 @@
 *.csv
 *.bson
 /src/data_output*
+/src/simulation/_output/*
