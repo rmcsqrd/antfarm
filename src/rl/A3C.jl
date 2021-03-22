@@ -12,19 +12,28 @@ end
 
 function A3C_Episode_Init(model, A3C_params)
 
-    # seed each agent with networks
+    # this function does two things:
+    #   1. seed agents with policy in the form of model
+    #   2. form a relationship from the Agents.jl agent_id
+    #      to the RL agent_id in the form of a dictionary
+    #  note that goals and agents have distinct id's in Agents.jl
+    #  but not in the RL simulation (the keys of the dict are distinct)
+
     goal_idx = 1
+    agent_idx = 1
     for agent_id in keys(model.agents)
 
         # first, assign policy to agents
         if model.agents[agent_id].type == :A
-            i = model.AgentHash[hash(agent_id)]
+            model.Agents2RL[agent_id] = agent_idx
             model.agents[agent_id].Model = A3C_params.model
+            agent_idx += 1
 
         # create dict of goals. key = RL index (1:num_goals; NOT
         # Agents.jl agent.id), value = Agents.jl agent.pos
         elseif model.agents[agent_id].type == :T
             model.Goals[goal_idx] = model.agents[agent_id].pos
+            model.Agents2RL[agent_id] = goal_idx
             goal_idx += 1
         end
     end
@@ -51,7 +60,7 @@ function GetSubstate(model, i)
 end
 
 function PolicyEvaluate(model, agent_id)
-    i = model.AgentHash[hash(agent_id)]
+    i = model.Agents2RL[agent_id]
     state = GetSubstate(model, i)
     policy_output = model.agents[agent_id].Model(state)
     pi_sa = policy_output[1:model.num_agents+length(model.Actions)]  #pi(s,a)

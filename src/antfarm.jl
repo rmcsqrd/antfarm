@@ -27,7 +27,7 @@ include("simulation/simulation_utils.jl")
 
 # include RL stuff
 include("rl/MDP_formulation.jl")
-#include("rl/transition_functions.jl")
+#include("rl/POMDP_formulation.jl")
 include("rl/A3C.jl")
 
 # include analysis stuff

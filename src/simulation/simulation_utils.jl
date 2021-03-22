@@ -39,7 +39,7 @@ function RunModelPlot(model, agent_step!, model_step!, filepath)
         framerate = 100,
         resolution = (600, 600),
         as = as_f(a) = 1200*1/minimum(a.SSdims)*a.radius,  ## this was defined empirically
-        ac = ac_f(a) = a.type in (:A, :O) ? a.color : "#ffffff",
+        ac = ac_f(a) = a.type in (:A, :O) ? a.color : "#A9A9A9",
         am = am_f(a) = a.type in (:A, :O, :T) ? :circle : :circle,
         equalaspect=true,
         scheduler = PlotABM_Scheduler,
@@ -74,4 +74,19 @@ function PlotABM_Scheduler(model::ABM)
     append!(draw_order, agent_list)
 
     return draw_order
+end
+
+function DebugScreenshotPlot(model; filepath="/Users/riomcmahon/Desktop/plot.png")
+        plotabm(model,
+            as = as_f(a) = 380*1/minimum(a.SSdims)*a.radius,  ## this was defined empirically
+            ac = ac_f(a) = a.type in (:A, :O) ? a.color : "#A9A9A9",
+            am = am_f(a) = a.type in (:A, :O, :T) ? :circle : :circle,
+            #showaxis = false,
+            grid = false,
+            xlims = (0, model.space.extent[1]),
+            ylims = (0, model.space.extent[2]),
+            aspect_ratio=:equal,
+            scheduler = PlotABM_Scheduler
+               )
+        savefig(filepath)
 end
