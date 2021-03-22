@@ -46,14 +46,12 @@ function FMP_Model(; num_agents=20, num_goals=num_agents, num_steps=1500)
     return model
 end
 
-function FMP_Epoch()
-
-    # set global hyperparams
-    num_agents = 20
-    num_goals = 20
-    num_steps = 5000
-    num_episodes = 10000
-    discount_factor = 0.95
+function FMP_Epoch(;num_agents=20,
+                    num_goals = 20,
+                    num_steps = 5000,
+                    num_episodes = 10000,
+                    sim_vid_interval = 100,
+                  )
 
     # initialize stuff
     state_dim = 3*num_goals+num_agents
@@ -69,7 +67,7 @@ function FMP_Epoch()
                             1,
                             model,
                             θ,
-                            discount_factor,
+                            0.95,  # γ
                            )
 
     # setup prelim stuff for data recording
@@ -83,7 +81,7 @@ function FMP_Epoch()
     for episode in 1:num_episodes
         println("\nEpoch #$episode of $num_episodes")
 
-        if episode % 100 == 0
+        if episode % sim_vid_interval == 0
             FMP_Episode(A3C_params, plot_sim=true)
 
         else
@@ -137,17 +135,18 @@ function FMP_Episode(A3C_params; plot_sim=false)
     end
 
     function model_step!(model)
-        # do RL stuff 
-        StateTransition(model)
-        Reward(model)
-        Action(model)  # if you comment this out it behaves as vanilla FMP
 
         # do FMP stuff - figure out interacting pairs and update velocities
         # accordingly
         FMP_Update_Interacting_Pairs(model)
         for agent_id in keys(model.agents)
             FMP_Update_Vel(model.agents[agent_id], model)
-        end
+            end
+
+        # do RL stuff 
+        StateTransition(model)
+        Reward(model)
+        Action(model)  # if you comment this out it behaves as vanilla FMP
         
         # step model
         model.ModelStep += 1
@@ -163,8 +162,46 @@ function FMP_Episode(A3C_params; plot_sim=false)
         raw_data = RunModelCollect(model, agent_step!, model_step!)
         agent_data = raw_data[ [x==:A for x in raw_data.type], :]
         insertcols!(agent_data, 1, :episode_num=>[A3C_params.episode_number for x in 1:nrow(agent_data)])
+        plotabm(model,
+            as = as_f(a) = 380*1/minimum(a.SSdims)*a.radius,  ## this was defined empirically
+            ac = ac_f(a) = a.type in (:A, :O) ? a.color : "#ffffff",
+            am = am_f(a) = a.type in (:A, :O, :T) ? :circle : :circle,
+            #showaxis = false,
+            grid = false,
+            xlims = (0, model.space.extent[1]),
+            ylims = (0, model.space.extent[2]),
+            aspect_ratio=:equal,
+            scheduler = PlotABM_Scheduler
+               )  # BONE
+        savefig("/Users/riomcmahon/Desktop/plot.png")  # BONE
 
         return agent_data
     end
 end 
 
+function StateSpaceHashing(model)
+
+    # create associations between agent ID's and RL matrices
+    #   Note that Agents.jl stores goal positions and objects as agents with
+    #   unique IDs but this gives issues when trying to index into the RL state
+    #   space arrays. We solve this by hashing
+    
+    # start by getting list of agent ids that have symbol :A
+    agent_list = [hash(agent_id) for agent_id in keys(model.agents) if model.agents[agent_id].type == :A]
+    model.AgentHash = Dict(zip(agent_list, 1:length(agent_list)))
+    
+    # next get list of ids that have symbol :T
+    # create ways to "hash into" state space array from ContinuousSpace model, and "hash out of" state
+    # space array into ContinuousSpace model so we can update agent target
+    # positions
+    goal_list = [goal_id for goal_id in keys(model.agents) if model.agents[goal_id].type == :T]
+    for (idx, goal_id) in enumerate(goal_list)
+
+        # Agents.jl id -> RL id is hashed
+        model.GoalHash[hash(goal_id)] = idx
+
+        # RL id -> Agents.jl id is not hashed (to avoid collisions)
+        model.GoalHash[idx] = goal_id 
+    end
+
+end

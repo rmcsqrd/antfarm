@@ -41,7 +41,7 @@ function LinePositions(model)
         vel = (0,0)
         tau = pos .+ (0.8*x, 0)
         radius = model.FMP_params.d/2
-        color = AgentInitColor(i, model.num_agents)
+        color = string("#", hex(range(HSV(0,1,1), stop=HSV(-360,1,1), length=model.num_agents)[i]))
         add_agent!(pos, model, vel, tau, color, :A, radius, model.space.extent, [],[])  # add agents
         add_agent!(tau, model, vel, tau, color, :T, radius, model.space.extent, [],[])  # add targets
 
@@ -64,7 +64,7 @@ function CenteredLineObject(model)
         vel = (0,0)
         tau = pos 
         radius = model.FMP_params.d/2
-        color = AgentInitColor(i,model.num_agents)
+        color = string("#", hex(range(HSV(0,1,1), stop=HSV(-360,1,1), length=model.num_agents)[i]))
         add_agent!(pos, model, vel, tau, color, :A, radius, model.space.extent, [],[])  # add agents
         
     end
@@ -97,7 +97,7 @@ function CenteredObjectMovingLine(model)
         vel = (0,0)
         tau = (0.8*x,0) .+ pos 
         radius = model.FMP_params.d/2
-        color = AgentInitColor(i, model.num_agents)
+        color = string("#", hex(range(HSV(0,1,1), stop=HSV(-360,1,1), length=model.num_agents)[i]))
         add_agent!(tau, model, vel, tau, color, :T, radius, model.space.extent, [],[])  # add object target
         add_agent!(pos, model, vel, tau, color, :A, radius, model.space.extent, [],[])  # add agents
         
@@ -142,7 +142,7 @@ function CirclePositions(model)
         #tau = (x/2,y/2)
         type = :A
         radius = model.FMP_params.d/2
-        color = AgentInitColor(i, model.num_agents)
+        color = string("#", hex(range(HSV(0,1,1), stop=HSV(-360,1,1), length=model.num_agents)[i]))
         add_agent!(pos, model, vel, tau, color, :A, radius, model.space.extent, [], [])
         add_agent!(tau, model, vel, tau, color, :T, radius, model.space.extent, [], [])
     end
@@ -178,7 +178,7 @@ function CirclePositionsObject(model)
         #tau = (x/2,y/2)
         type = :A
         radius = model.FMP_params.d/2
-        color = AgentInitColor(i, model.num_agents)
+        color = string("#", hex(range(HSV(0,1,1), stop=HSV(-360,1,1), length=model.num_agents)[i]))
         add_agent!(pos, model, vel, tau, color, :A, radius, model.space.extent, [],[])
         add_agent!(tau, model, vel, tau, color, :T, radius, model.space.extent, [],[])
     end
@@ -200,7 +200,7 @@ function RandomPositions(model)
         tau = Tuple(rand(2))
         type = :A
         radius = model.FMP_params.d/2
-        color = AgentInitColor(i, model.num_agents)
+        color = string("#", hex(range(HSV(0,1,1), stop=HSV(-360,1,1), length=model.num_agents)[i]))
         add_agent!(pos, model, vel, tau, color, type, radius, model.space.extent, [],[])
     end
 

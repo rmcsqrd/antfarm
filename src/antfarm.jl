@@ -20,10 +20,10 @@ import CairoMakie
 
 
 # include simulation stuff
-include("multiagent/simulation_init.jl")
-include("multiagent/plot_utils.jl")
-include("multiagent/simulation.jl")
-include("multiagent/rl_simulation_init.jl")
+include("simulation/model_init.jl")
+include("simulation/simulation_wrapper.jl")
+include("simulation/rl_model_init.jl")
+include("simulation/simulation_utils.jl")
 
 # include RL stuff
 include("rl/MDP_formulation.jl")
@@ -33,7 +33,5 @@ include("rl/A3C.jl")
 # include analysis stuff
 include("analysis/analysis_tools.jl")
 
-# include util stuff
-include("utils/utils.jl")
 
 end # module

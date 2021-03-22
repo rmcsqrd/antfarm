@@ -13,7 +13,7 @@ function LostHiker(model)
         vel = (0,0)
         tau = (rand(0:0.01:x), rand(0:0.01:y))
         radius = model.FMP_params.d/2
-        color = AgentInitColor(i, model.num_agents)
+        color = string("#", hex(range(HSV(0,1,1), stop=HSV(-360,1,1), length=model.num_agents)[i]))
 
         # seed agents with random positions initially
         add_agent!(pos, model, vel, pos, color, :A, radius, model.space.extent, [], [], 0, 0.0, 0.0, 0.0, [], [])

@@ -61,7 +61,15 @@ function StateTransition(model)
             model.agents[agent_id].State = GetSubstate(model, i)
         end
     end
-
+    println("GA = ")
+    display(model.SS.GA)
+    println("GO = ")
+    display(model.SS.GO)
+    println("GI = ")
+    display(model.SS.GI)
+    println("AI = ")
+    display(model.SS.AI)
+    println("\n\n\n")
 end
 
 function Reward(model)
