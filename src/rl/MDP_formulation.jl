@@ -1,11 +1,3 @@
-mutable struct MDP
-    State
-    Action
-    Transition
-    Discount
-    Reward
-end
-
 mutable struct StateSpace
     # Goal awareness vector for agent
     # GA(i, g) = agent i is interacting with goal g
@@ -31,7 +23,7 @@ function StateTransition(model)
     for agent_id in keys(model.agents)
         if model.agents[agent_id].type == :A
             i = model.Agents2RL[agent_id]
-            for goal_id in model.agents[i].Gi
+            for goal_id in model.agents[agent_id].Gi
                 g = model.Agents2RL[goal_id]
                 model.SS.GO[i,g] = 1
                 model.SS.GA[i,g] = 1
@@ -46,7 +38,7 @@ function StateTransition(model)
         if model.agents[agent_id].type == :A
             i = model.Agents2RL[agent_id]
 
-            for neighbor_id in model.agents[i].Ni
+            for neighbor_id in model.agents[agent_id].Ni
 
                 # first update agent interactions
                 j = model.Agents2RL[neighbor_id]
@@ -61,15 +53,15 @@ function StateTransition(model)
             model.agents[agent_id].State = GetSubstate(model, i)
         end
     end
-#    println("GA = ")  # BONE
-#    display(model.SS.GA)
-#    println("GO = ")
-#    display(model.SS.GO)
-#    println("GI = ")
-#    display(model.SS.GI)
-#    println("AI = ")
-#    display(model.SS.AI)
-#    println("\n\n\n")
+    println("GA = ")  # BONE
+    display(model.SS.GA)
+    println("GO = ")
+    display(model.SS.GO)
+    println("GI = ")
+    display(model.SS.GI)
+    println("AI = ")
+    display(model.SS.AI)
+    println("\n\n\n")
 end
 
 function Reward(model)
@@ -85,7 +77,7 @@ function Reward(model)
             i = model.Agents2RL[agent_id]
 
             # give reward for communication
-            for neighbor_id in model.agents[i].Ni  #BONE this should be agent_id
+            for neighbor_id in model.agents[agent_id].Ni  
                 j = model.Agents2RL[neighbor_id]
                 info_exchange = xor.(model.SS.GA[i, :], model.SS.GA[j, :])
                 beta = sum(info_exchange)/model.num_goals
