@@ -17,9 +17,14 @@ mutable struct StateSpace
 end
 
 function StateTransition(model)
-    # Goal Occupation  
-    # clear goal interactions then update goal occupation/goal awareness
+
+    # start by clearing relevant states (only GA is persistent between steps
     model.SS.GO = zeros(Bool, size(model.SS.GO))
+    model.SS.GI = zeros(Bool, size(model.SS.GI))
+    model.SS.AI = zeros(Bool, size(model.SS.AI))
+
+    # Goal Occupation  
+    # update goal occupation/goal awareness
     for agent_id in keys(model.agents)
         if model.agents[agent_id].type == :A
             i = model.Agents2RL[agent_id]
@@ -32,8 +37,7 @@ function StateTransition(model)
     end
     
     # Goal Awareness/Agent Interaction
-    # clear agent interactions and goal awareness then update 
-    model.SS.AI = zeros(Bool, size(model.SS.AI))
+    # update interactions and awareness 
     for agent_id in keys(model.agents)
         if model.agents[agent_id].type == :A
             i = model.Agents2RL[agent_id]
@@ -53,15 +57,6 @@ function StateTransition(model)
             model.agents[agent_id].State = GetSubstate(model, i)
         end
     end
-    println("GA = ")  # BONE
-    display(model.SS.GA)
-    println("GO = ")
-    display(model.SS.GO)
-    println("GI = ")
-    display(model.SS.GI)
-    println("AI = ")
-    display(model.SS.AI)
-    println("\n\n\n")
 end
 
 function Reward(model)
@@ -111,6 +106,7 @@ function Action(model)
                 # as an agent), then give it the target location
                 if model.SS.GA[i, selected_action] == 1
                     model.agents[agent_id].tau = model.Goals[selected_action]
+                    model.SS.GI[i, selected_action] = 1
                     #println("Goal action selected (sucessful): ",model.agents[agent_id].tau)
                 else
                     # else stay in current position and incur penalty

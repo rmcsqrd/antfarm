@@ -65,7 +65,6 @@ function PolicyEvaluate(model, agent_id)
     policy_output = model.agents[agent_id].Model(state)
     pi_sa = policy_output[1:model.num_agents+length(model.Actions)]  #pi(s,a)
     vi_s = policy_output[length(policy_output)]  # v(s)
-    pi_sa = reshape(pi_sa, (length(pi_sa),))
    
     # generate action list
     actions = []
@@ -106,12 +105,6 @@ function PolicyTrain(agent_data, A3C_params)
             # compute advantage
             R = rewards[t] + A3C_params.gamma*R
             advantages[t] = R - values[t]  # advantages for reverse order
-            if pi_action[t] < 0
-                @error "π_sa term is fucked"
-                println("Reward = ", rewards[t])
-                println("values = ", values[t])
-                println("pi_action = ", pi_action[t])
-            end
             data[t] = (pi_action[t], advantages[t])
         end
         global_reward += sum(rewards)

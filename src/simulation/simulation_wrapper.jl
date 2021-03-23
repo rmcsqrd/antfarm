@@ -158,7 +158,7 @@ function FMP_Episode(A3C_params; plot_sim=false)
         raw_data = RunModelCollect(model, agent_step!, model_step!)
         agent_data = raw_data[ [x==:A for x in raw_data.type], :]
         insertcols!(agent_data, 1, :episode_num=>[A3C_params.episode_number for x in 1:nrow(agent_data)])
-        DebugScreenshotPlot(model) # BONE
+        #DebugScreenshotPlot(model) # BONE
         return agent_data
     end
 end 
