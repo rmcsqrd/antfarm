@@ -63,7 +63,7 @@ function PolicyEvaluate(model, agent_id)
     i = model.Agents2RL[agent_id]
     state = GetSubstate(model, i)
     policy_output = model.agents[agent_id].Model(state)
-    pi_sa = policy_output[1:model.num_agents+length(model.Actions)]  #pi(s,a)
+    pi_sa = policy_output[1:model.num_goals+length(model.Actions)]  #pi(s,a)
     vi_s = policy_output[length(policy_output)]  # v(s)
    
     # generate action list
@@ -82,7 +82,7 @@ end
 function PolicyTrain(agent_data, A3C_params)
 
     agent_ids = agent_data[1:A3C_params.num_agents, :].id
-    opt = RMSProp()
+    opt = ADAM()
     global_reward = 0
     for id in agent_ids
 

@@ -50,13 +50,14 @@ function FMP_Epoch(;num_agents=20,
                     num_steps = 5000,
                     num_episodes = 10000,
                     sim_vid_interval = 100,
+                    sim_type = "lost_hiker",
                   )
 
     # initialize stuff
     state_dim = 3*num_goals+num_agents
     model = Chain(
                   Dense(state_dim, 128, tanh),
-                  LSTM(128, num_goals+4+1) # num goals, actions, V(si)
+                  Dense(128, num_goals+4+1, relu) # num goals, actions, V(si)
                  )
     θ = params(model)
     A3C_params = A3C_Global(num_agents, 
@@ -81,12 +82,12 @@ function FMP_Epoch(;num_agents=20,
         println("\nEpoch #$episode of $num_episodes")
 
         if episode % sim_vid_interval == 0
-            FMP_Episode(A3C_params, plot_sim=true)
+            FMP_Episode(A3C_params, plot_sim=true, sim_type=sim_type)
 
         else
 
             start_time = time()
-            agent_data = FMP_Episode(A3C_params)
+            agent_data = FMP_Episode(A3C_params, sim_type=sim_type)
 
             # train policy, collect reward, save
             epoch_reward = PolicyTrain(agent_data, A3C_params)
@@ -112,7 +113,7 @@ end
 # Now that we've defined the plot utilities, lets re-run our simulation with
 # some additional options. We do this by redefining the model, re-adding the
 # agents but this time with a color parameter that is actually used. 
-function FMP_Episode(A3C_params; plot_sim=false)
+function FMP_Episode(A3C_params; plot_sim=false, sim_type="lost_hiker")
 
     # define model
     model = FMP_Model(; num_agents=A3C_params.num_agents, 
@@ -120,7 +121,13 @@ function FMP_Episode(A3C_params; plot_sim=false)
                         num_steps=A3C_params.num_steps)
     
     # initialize model by adding in agents
-    LostHiker(model)
+    if sim_type == "lost_hiker"
+        LostHiker(model)
+    elseif sim_type == "simple_test"
+        SimpleTest(model)
+    else
+        @error "Simulation type not defined"
+    end
     
     # initialize the A3C struct
     A3C_Episode_Init(model, A3C_params)
@@ -162,3 +169,4 @@ function FMP_Episode(A3C_params; plot_sim=false)
         return agent_data
     end
 end 
+
