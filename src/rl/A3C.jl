@@ -1,114 +1,54 @@
-
 mutable struct A3C_Global
-    num_agents::Int64
-    num_goals::Int64
-    num_steps::Int64
-    num_episodes::Int64
-    episode_number::Int64
-    model # this is the model architecture
+    model # this is the NN model used for evaluation
     θ     # this is the set of parameters. We share params so θ = θ_v
-    gamma::Float64
+    π_sa::Array{Float64, 2}  # π_sa(i,t) = probability of action for agent i at step t
+    v_s::Array{Float64, 2}   # v_s(i, t) = value of state for agent i at step t
+    r_sa::Array{Float64, 2}  # r_sa(i,t) = reward for agent i at step t
 end
 
-function A3C_Episode_Init(model, A3C_params)
-
-    # this function does two things:
-    #   1. seed agents with policy in the form of model
-    #   2. form a relationship from the Agents.jl agent_id
-    #      to the RL agent_id in the form of a dictionary
-    #  note that goals and agents have distinct id's in Agents.jl
-    #  but not in the RL simulation (the keys of the dict are distinct)
-
-    goal_idx = 1
-    agent_idx = 1
-    for agent_id in keys(model.agents)
-
-        # first, assign policy to agents
-        if model.agents[agent_id].type == :A
-            model.Agents2RL[agent_id] = agent_idx
-            model.agents[agent_id].Model = A3C_params.model
-            agent_idx += 1
-
-        # create dict of goals. key = RL index (1:num_goals; NOT
-        # Agents.jl agent.id), value = Agents.jl agent.pos
-        elseif model.agents[agent_id].type == :T
-            model.Goals[goal_idx] = model.agents[agent_id].pos
-            model.Agents2RL[agent_id] = goal_idx
-            goal_idx += 1
-        end
-    end
-
-end
-
-function GetSubstate(model, i)
-
-        # get agent substate and flatten
-        GAi = model.SS.GA[i, :]
-        GOi = model.SS.GO[i, :]
-        GIi = model.SS.GI[i, :]
-        AIi = model.SS.AI[i, :]
-
-        input_reshape(x) = reshape(x, (prod(size(x)), 1))
-        flattened_state = [
-                        input_reshape(GAi);
-                        input_reshape(GOi);
-                        input_reshape(GIi);
-                        input_reshape(AIi)
-                        ]
-        return reshape(flattened_state, (length(flattened_state),))
-    
-end
-
-function PolicyEvaluate(model, agent_id)
-    i = model.Agents2RL[agent_id]
-    state = GetSubstate(model, i)
-    policy_output = model.agents[agent_id].Model(state)
-    pi_sa = policy_output[1:model.num_goals+length(model.Actions)]  #pi(s,a)
-    vi_s = policy_output[length(policy_output)]  # v(s)
+function A3C_policy_eval(i, t, s_t, r_t, model)
+    output = model.RL.params.model(s_t)
+    πi_sa = vec(output[1:4])  # 4 actions
+    vi_s = output[5]
    
     # generate action list
-    actions = []
-    [push!(actions, x) for x in 1:model.num_goals]
-    [push!(actions, x) for x in model.num_goals+1:model.num_goals+length(model.Actions)] 
+    actions = [x for x in 1:4]
 
     # get probabilities
-    probs = ProbabilityWeights(softmax(pi_sa))
+    probs = ProbabilityWeights(softmax(πi_sa))
 
     # select action
     action = sample(actions, probs)
-    return action, probs[action], vi_s  # returns an integer corresponding to goal or number larger than goals for random
+
+    # update history for training
+    # BONE, why is this returning NaN
+    model.RL.params.π_sa[i, t]= probs[action]
+    model.RL.params.v_s[i, t] = vi_s
+    model.RL.params.r_sa[i, t] = r_t
+
+    return action
 end
 
-function PolicyTrain(agent_data, A3C_params)
+function A3C_policy_train(model)
 
-    agent_ids = agent_data[1:A3C_params.num_agents, :].id
+    
     opt = ADAM()
     global_reward = 0
-    for id in agent_ids
+    for i in 1:model.num_agents
 
-        # get individual agent dataframe
-        agent_df = agent_data[ [x==id for x in agent_data.id], :]
-        R = last(agent_df).Value
-
-        # get training data
-        tmax = size(agent_df)[1]
+        # generate history for agent
+        tmax = model.ModelStep
         data = Array{Tuple{Float64, Float64}}(undef, tmax)
         [data[i] = (0.0,0.0) for i in 1:length(data)]
-        rewards = agent_df.Reward[1:tmax-1]
-        values = agent_df.Value[1:tmax-1]
-        pi_action = agent_df.PiAction[1:tmax-1]
-        advantages = zeros(tmax-1)
+        R = model.RL.params.v_s[i, tmax-1]
 
-        # build training data
         for t in reverse(1:tmax-1)
-
-            # compute advantage
-            R = rewards[t] + A3C_params.gamma*R
-            advantages[t] = R - values[t]  # advantages for reverse order
-            data[t] = (pi_action[t], advantages[t])
+            R = model.RL.params.r_sa[i, t] + model.RL.γ*R
+            A_sa = R - model.RL.params.v_s[i, t]
+            data[t] = (model.RL.params.π_sa[i, t], A_sa)
         end
-        global_reward += sum(rewards)
-        
+        global_reward += sum(model.RL.params.r_sa[i, :])
+
         # create loss functions
         actor_loss_function(π_sa, A_sa) = log(π_sa)*A_sa
         critic_loss_function(π_sa, A_sa) = A_sa^2
@@ -118,18 +58,18 @@ function PolicyTrain(agent_data, A3C_params)
         for d in data
             
             # start with actor gradients
-            dθ = gradient(A3C_params.θ) do
+            dθ = gradient(model.RL.params.θ) do
                 actor_loss = actor_loss_function(d[1], d[2])
                 return actor_loss
             end
-            update!(opt, A3C_params.θ, dθ)
+            update!(opt, model.RL.params.θ, dθ)
 
             # next do critic gradients
-            dθ_v = gradient(A3C_params.θ) do
+            dθ_v = gradient(model.RL.params.θ) do
                 critic_loss = critic_loss_function(d[1], d[2])
                 return critic_loss
             end
-            update!(opt, A3C_params.θ, dθ_v)
+            update!(opt, model.RL.params.θ, dθ_v)
         end
     end
     return global_reward

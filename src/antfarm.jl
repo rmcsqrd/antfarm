@@ -26,12 +26,16 @@ include("simulation/rl_model_init.jl")
 include("simulation/simulation_utils.jl")
 
 # include RL stuff
+include("rl/rl_wrapper.jl")
 include("rl/MDP_formulation.jl")
 #include("rl/POMDP_formulation.jl")
 include("rl/A3C.jl")
 
 # include analysis stuff
 include("analysis/analysis_tools.jl")
+
+# include fmp stuff
+include("fmp/fmp.jl")
 
 
 end # module

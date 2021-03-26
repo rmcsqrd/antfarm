@@ -2,9 +2,7 @@
 Run model, return data
 """
 function RunModelCollect(model, agent_step!, model_step!)
-    adata = [ :type, :State, :Action, :PiAction, :Value, :Reward]
-    agent_data, _ = run!(model, agent_step!, model_step!, model.num_steps; adata)
-    return agent_data
+    run!(model, agent_step!, model_step!, model.num_steps)
 end
 
 """
