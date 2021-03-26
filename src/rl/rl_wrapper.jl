@@ -27,7 +27,7 @@ function RL_Update(model)
 
             # next, compare GA with goal locations. Return true location if
             # agent i is aware of goal location, (Inf, Inf) if not
-            goal_pos_i = [xi == 1 ? yi : (Inf, Inf) for xi in GAi, yi in goal_loc_array[1,:]]  # BONE, make sure this is working
+            goal_pos_i = [xi == 1 ? yi : (999999, 999999) for xi in GAi, yi in goal_loc_array[1,:]]  # BONE, make sure this is working
 
             # vectorize to create state. Need to use iterators because
             # vec(Tuple) doesn't work

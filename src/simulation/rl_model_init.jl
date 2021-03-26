@@ -38,7 +38,6 @@ function SimpleTest(model)
     end
 
     for i in 1:model.num_goals
-        pos = starting_pos .+ (rand(0:0.00001:0.0001), rand(0:0.00001:0.0001))
         vel = (0,0)
         tau = (0.2*x, 0.5*y)
         radius = model.FMP_params.d/2

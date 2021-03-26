@@ -1,6 +1,6 @@
 export model_run
 
-struct SimulationParams
+mutable struct SimulationParams
     num_agents::Int64
     num_goals::Int64
     num_steps::Int64
@@ -52,12 +52,12 @@ function model_run(;num_agents=20,
         println("\nEpoch #$episode of $num_episodes")
 
         if episode % sim_vid_interval == 0
-            episode_run(rl_arch, sim_params, sim_type, plot_sim=true)
+            reward_hist[episode] = episode_run(rl_arch, sim_params, sim_type, plot_sim=true)
 
         else
 
             start_time = time()
-            episode_run(rl_arch, sim_params, sim_type)
+            reward_hist[episode] = episode_run(rl_arch, sim_params, sim_type)
             # BONE - need to figure out how to save policy
 
             end_time = time()
@@ -153,5 +153,7 @@ function episode_run(rl_arch, sim_params, sim_type; plot_sim=false)
         # update model
         model.RL.policy_train(model)
     end
+    sim_params.episode_number += 1
+    return sum(model.RL.params.r_sa)
 end 
 

@@ -23,7 +23,6 @@ function RunModelPlot(model, agent_step!, model_step!, filepath)
     try
         rm(filepath)
     catch
-        println("file doesn't exist, moving on")
     end
 
     # plot stuff

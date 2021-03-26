@@ -21,7 +21,6 @@ function A3C_policy_eval(i, t, s_t, r_t, model)
     action = sample(actions, probs)
 
     # update history for training
-    # BONE, why is this returning NaN
     model.RL.params.π_sa[i, t]= probs[action]
     model.RL.params.v_s[i, t] = vi_s
     model.RL.params.r_sa[i, t] = r_t
