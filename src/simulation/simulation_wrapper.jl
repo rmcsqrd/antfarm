@@ -83,6 +83,7 @@ function episode_run(rl_arch, sim_params, sim_type; plot_sim=false)
     model = fmp_model(rl_arch; num_agents=sim_params.num_agents, 
                                num_goals=sim_params.num_goals, 
                                num_steps=sim_params.num_steps)
+
     
     # initialize model by adding in agents
     if sim_type == "lost_hiker"
@@ -152,6 +153,9 @@ function episode_run(rl_arch, sim_params, sim_type; plot_sim=false)
         
         # update model
         model.RL.policy_train(model)
+
+        # update global policy
+        rl_arch.params.model = model.RL.params.model
     end
     sim_params.episode_number += 1
     return sum(model.RL.params.r_sa)
