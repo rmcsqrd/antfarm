@@ -81,6 +81,8 @@ function A3C_policy_train(model)
             dθ .+= gradient(()->actor_loss_function(R, s_t, a_t), model.RL.params.θ)
             dθ_v .+= gradient(()->critic_loss_function(R, s_t), model.RL.params.θ)
         end
+
+        # update model with accumulated gradients
         update!(opt, model.RL.params.θ, dθ)
         update!(opt, model.RL.params.θ, dθ_v)
         global_reward += sum(model.RL.params.r_sa[i, :])

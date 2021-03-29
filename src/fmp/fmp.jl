@@ -11,10 +11,9 @@ mutable struct FMP_Agent <: AbstractAgent
     Gi::Vector{Int64} ## array of neighboring goal IDs
 end
 
+function fmp_model_init(rl_arch, sim_params; num_agents=20, num_goals=num_agents, num_steps=1500)
 
-## define AgentBasedModel (ABM)
-
-function fmp_model(rl_arch; num_agents=20, num_goals=num_agents, num_steps=1500)
+    # first define model properties/space/etc for ABM
     properties = Dict(:FMP_params=>fmp_parameter_init(),
                       :dt => 0.05,
                       :num_agents=>num_agents,
@@ -33,5 +32,60 @@ function fmp_model(rl_arch; num_agents=20, num_goals=num_agents, num_steps=1500)
 
     space2d = ContinuousSpace((1,1); periodic = true)
     model = ABM(FMP_Agent, space2d, properties=properties)
+    
+    # next, initialize model by adding in agents
+    if sim_params.sim_type == "lost_hiker"
+        LostHiker(model)
+    elseif sim_params.sim_type == "simple_test"
+        SimpleTest(model)
+    else
+        @error "Simulation type not defined"
+    end
+
+    #  finally, form a relationship from the Agents.jl agent_id
+    #  to the RL agent_id in the form of a dictionary
+    #  note that goals and agents have distinct id's in Agents.jl
+    #  but not in the RL simulation (the keys of the dict are distinct)
+
+    goal_idx = 1
+    agent_idx = 1
+    for agent_id in keys(model.agents)
+
+        # first, assign policy to agents
+        if model.agents[agent_id].type == :A
+            model.Agents2RL[agent_id] = agent_idx
+            agent_idx += 1
+
+        # create dict of goals. key = RL index (1:num_goals; NOT
+        # Agents.jl agent.id), value = Agents.jl agent.pos
+        elseif model.agents[agent_id].type == :T
+            model.Goals[goal_idx] = model.agents[agent_id].pos
+            model.Agents2RL[agent_id] = goal_idx
+            goal_idx += 1
+        end
+    end
+
     return model
+end
+
+# define agent/model step stuff
+function agent_step!(agent, model)
+    move_agent!(agent, model, model.dt)
+end
+
+function model_step!(model)
+
+    # do FMP stuff - figure out interacting pairs and update velocities
+    # accordingly
+    fmp_update_interacting_pairs(model)
+    for agent_id in keys(model.agents)
+        fmp_update_vel(model.agents[agent_id], model)
+        end
+
+    # do RL stuff 
+    RL_Update(model)
+    
+    # step model
+    model.ModelStep += 1
+
 end

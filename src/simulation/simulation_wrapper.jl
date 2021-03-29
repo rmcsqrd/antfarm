@@ -52,12 +52,12 @@ function model_run(;num_agents=20,
         println("\nEpoch #$episode of $num_episodes")
 
         if episode % sim_vid_interval == 0
-            reward_hist[episode] = episode_run(rl_arch, sim_params, sim_type, plot_sim=true)
+            reward_hist[episode] = episode_run(rl_arch, sim_params, plot_sim=true)
 
         else
 
             start_time = time()
-            reward_hist[episode] = episode_run(rl_arch, sim_params, sim_type)
+            reward_hist[episode] = episode_run(rl_arch, sim_params)
             # BONE - need to figure out how to save policy
 
             end_time = time()
@@ -77,75 +77,19 @@ end
 # Now that we've defined the plot utilities, lets re-run our simulation with
 # some additional options. We do this by redefining the model, re-adding the
 # agents but this time with a color parameter that is actually used. 
-function episode_run(rl_arch, sim_params, sim_type; plot_sim=false)
+function episode_run(rl_arch, sim_params; plot_sim=false)
 
     # define model
-    model = fmp_model(rl_arch; num_agents=sim_params.num_agents, 
+    model = fmp_model_init(rl_arch, sim_params; num_agents=sim_params.num_agents, 
                                num_goals=sim_params.num_goals, 
                                num_steps=sim_params.num_steps)
-
     
-    # initialize model by adding in agents
-    if sim_type == "lost_hiker"
-        LostHiker(model)
-    elseif sim_type == "simple_test"
-        SimpleTest(model)
-    else
-        @error "Simulation type not defined"
-    end
-    
-    # initialize the agents with the RL policy evaluate methods
-    #   1. seed agents with policy in the form of model
-    #   2. form a relationship from the Agents.jl agent_id
-    #      to the RL agent_id in the form of a dictionary
-    #  note that goals and agents have distinct id's in Agents.jl
-    #  but not in the RL simulation (the keys of the dict are distinct)
-
-    goal_idx = 1
-    agent_idx = 1
-    for agent_id in keys(model.agents)
-
-        # first, assign policy to agents
-        if model.agents[agent_id].type == :A
-            model.Agents2RL[agent_id] = agent_idx
-            agent_idx += 1
-
-        # create dict of goals. key = RL index (1:num_goals; NOT
-        # Agents.jl agent.id), value = Agents.jl agent.pos
-        elseif model.agents[agent_id].type == :T
-            model.Goals[goal_idx] = model.agents[agent_id].pos
-            model.Agents2RL[agent_id] = goal_idx
-            goal_idx += 1
-        end
-    end
-
-    # define agent/model step stuff
-    function agent_step!(agent, model)
-        move_agent!(agent, model, model.dt)
-    end
-
-    function model_step!(model)
-
-        # do FMP stuff - figure out interacting pairs and update velocities
-        # accordingly
-        fmp_update_interacting_pairs(model)
-        for agent_id in keys(model.agents)
-            fmp_update_vel(model.agents[agent_id], model)
-            end
-
-        # do RL stuff 
-        RL_Update(model)
-        
-        # step model
-        model.ModelStep += 1
-
-    end
-
+    # run simulation
     if plot_sim == true
         @info "plotting simulation"
         filepath = "/Users/riomcmahon/Desktop/episode_$(sim_params.episode_number).mp4"
         RunModelPlot(model, agent_step!, model_step!, filepath)
-        PlotCurrentReward()
+        #PlotCurrentReward()
     else
 
         # run simulation
