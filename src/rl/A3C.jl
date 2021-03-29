@@ -1,13 +1,13 @@
 mutable struct A3C_Global
     model # this is the NN model used for evaluation
     θ     # this is the set of parameters. We share params so θ = θ_v
-    π_sa::Array{Float64, 2}  # π_sa(i,t) = probability of action for agent i at step t
-    v_s::Array{Float64, 2}   # v_s(i, t) = value of state for agent i at step t
-    r_sa::Array{Float64, 2}  # r_sa(i,t) = reward for agent i at step t
+    r_sa::Array{Float32, 2}  # r_sa(i,t) = reward for agent i at step t
+    s_t::Array{Float32, 3}   # s_t(i, :, t) = state for agent i at step t
+    a_t::Array{Int32, 2}     # a_t(i,t) = action index for agent i at step t
 end
 
 # custom Flux layer
-mutable struct A3C_Output
+struct A3C_Output
     W
 end
 
@@ -16,13 +16,13 @@ A3C_Output(in::Int64, out::Int64) =
     A3C_Output(randn(out, in))
 
 (m::A3C_Output)(x) = (softmax((m.W*x)[1:size(m.W)[1]-1]),  # π_sa
-                            (m.W*x)[size(m.W)[1]])               # v_s
+                      (m.W*x)[size(m.W)[1]])               # v_s
 
 Flux.@functor A3C_Output
 
 
 function A3C_policy_eval(i, t, s_t, r_t, model)
-    πi_sa, vi_s = model.RL.params.model(s_t)
+    πi_sa, _ = model.RL.params.model(s_t)
    
     # generate action list
     actions = [x for x in 1:4]
@@ -37,70 +37,53 @@ function A3C_policy_eval(i, t, s_t, r_t, model)
    # println("probs = $probs\n")
 
     # update history for training
-    model.RL.params.π_sa[i, t]= probs[action]
-    model.RL.params.v_s[i, t] = vi_s
     model.RL.params.r_sa[i, t] = r_t
+    model.RL.params.s_t[i,:, t] = s_t
+    model.RL.params.a_t[i, t] = action
 
     return action
 end
 
 function A3C_policy_train(model)
+    # create loss functions
+    function actor_loss_function(R, s_t, a_t)
+        model_output = model.RL.params.model(s_t)
+        π_sa = model_output[1][a_t]
+        v_s = model_output[2]
+        return log(π_sa)*(R-v_s)
+    end
+
+    function critic_loss_function(R, s_t)
+        model_output = model.RL.params.model(s_t)
+        v_s = model_output[2]
+        return (R-v_s)^2
+
+    end
     
     opt = ADAM()
     global_reward = 0
     for i in 1:model.num_agents
 
-        # generate history for agent
+        # compute initial gradients at end of series (tmax-1)
         tmax = model.ModelStep
-        data = Array{Tuple{Float64, Float64}}(undef, tmax-1)
-        [data[i] = (0.0,0.0) for i in 1:length(data)]
-        R = model.RL.params.v_s[i, tmax-1]
+        _ , R = model.RL.params.model(model.RL.params.s_t[i, :, tmax-1])
+        s_t = model.RL.params.s_t[i, :, tmax-1]
+        a_t = model.RL.params.a_t[i, tmax-1]
+        dθ = gradient(()->actor_loss_function(R, s_t, a_t), model.RL.params.θ)
+        dθ_v = gradient(()->critic_loss_function(R, s_t), model.RL.params.θ)
 
-        for t in reverse(1:tmax-1)
+        # accumulate gradients for rest of series, starting at tmax-2
+        for t in reverse(1:tmax-2)
             R = model.RL.params.r_sa[i, t] + model.RL.γ*R
-            A_sa = R - model.RL.params.v_s[i, t]
-            data[t] = (model.RL.params.π_sa[i, t], A_sa)
+            s_t = model.RL.params.s_t[i, :, t]
+            a_t = model.RL.params.a_t[i, t]
+
+            dθ .+= gradient(()->actor_loss_function(R, s_t, a_t), model.RL.params.θ)
+            dθ_v .+= gradient(()->critic_loss_function(R, s_t), model.RL.params.θ)
         end
+        update!(opt, model.RL.params.θ, dθ)
+        update!(opt, model.RL.params.θ, dθ_v)
         global_reward += sum(model.RL.params.r_sa[i, :])
-
-        # create loss functions
-        actor_loss_function(π_sa, A_sa) = log(π_sa)*A_sa
-        critic_loss_function(π_sa, A_sa) = A_sa^2
-        #local actor_loss_function, critic_loss_function
-
-        # BEGIN BONE
-#        println("pre-training: ")
-#        display(model.RL.params.θ)
-#
-#        # this works
-#        loss(x, y) = Flux.Losses.mse(model.RL.params.model(x), y)
-#        data = (rand(5), rand(5))
-#        println(loss(data[1], data[2]))
-#        dθ = gradient(() -> loss(data[1], data[2]), model.RL.params.θ)
-#        update!(opt, model.RL.params.θ, dθ)
-
-        #END BONE
-        # BONE: this does not
-        # train model
-        for d in data
-            # start with actor gradients
-            dθ = gradient(() -> actor_loss_function(d[1], d[2]), model.RL.params.θ)
-            update!(opt, model.RL.params.θ, dθ)
-
-#            # next do critic gradients
-#            dθ_v = gradient(() -> critic_loss_function(d[1], d[2]), model.RL.params.θ)
-#            update!(opt, model.RL.params.θ, dθ_v)
-        end
-        #for d in data
-            #println(d)
-            #println(actor_loss_function(d))
-            #Flux.train!(actor_loss_function, model.RL.params.θ, data, opt)
-            #println(d[1], "  ", d[2])
-        #end
     end
-        display(model.RL.params.θ)
-        println("\n")
-        sleep(1)
-    #display(model.RL.params.π_sa)  # BONE, don't delete. this is a clue, between iterations it appears to be copying the probability of selection for agents? is this expected
     return global_reward
 end

@@ -10,6 +10,7 @@ using Plots
 using LinearAlgebra
 using ProgressMeter
 using Flux
+using Zygote: Params
 using Flux.Optimise: update!
 using StatsBase
 using Agents

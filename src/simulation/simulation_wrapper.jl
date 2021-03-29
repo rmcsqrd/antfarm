@@ -69,7 +69,7 @@ function model_run(;num_agents=20,
 
 
             # save weights
-            #bson(string(model_write_path, "weights_epnum$episode.bson"), Dict(:Policy => rl_arch.policy_evaluate))
+            bson(string(model_write_path, "theta_episode$episode.bson"), Dict(:Policy => rl_arch.params))
         end
     end
 end
@@ -128,9 +128,9 @@ function episode_run(rl_arch, sim_params, sim_type; plot_sim=false)
 
         # do FMP stuff - figure out interacting pairs and update velocities
         # accordingly
-        FMP_Update_Interacting_Pairs(model)
+        fmp_update_interacting_pairs(model)
         for agent_id in keys(model.agents)
-            FMP_Update_Vel(model.agents[agent_id], model)
+            fmp_update_vel(model.agents[agent_id], model)
             end
 
         # do RL stuff 
@@ -145,6 +145,7 @@ function episode_run(rl_arch, sim_params, sim_type; plot_sim=false)
         @info "plotting simulation"
         filepath = "/Users/riomcmahon/Desktop/episode_$(sim_params.episode_number).mp4"
         RunModelPlot(model, agent_step!, model_step!, filepath)
+        PlotCurrentReward()
     else
 
         # run simulation
@@ -155,7 +156,7 @@ function episode_run(rl_arch, sim_params, sim_type; plot_sim=false)
         model.RL.policy_train(model)
 
         # update global policy
-        rl_arch.params.model = model.RL.params.model
+        rl_arch.params.θ = model.RL.params.θ
     end
     sim_params.episode_number += 1
     return sum(model.RL.params.r_sa)

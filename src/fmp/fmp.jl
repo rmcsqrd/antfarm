@@ -15,7 +15,7 @@ end
 ## define AgentBasedModel (ABM)
 
 function fmp_model(rl_arch; num_agents=20, num_goals=num_agents, num_steps=1500)
-    properties = Dict(:FMP_params=>FMP_Parameter_Init(),
+    properties = Dict(:FMP_params=>fmp_parameter_init(),
                       :dt => 0.05,
                       :num_agents=>num_agents,
                       :num_goals=>num_goals,
