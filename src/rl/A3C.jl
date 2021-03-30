@@ -25,7 +25,7 @@ function A3C_policy_eval(i, t, s_t, r_t, model)
     πi_sa, _ = model.RL.params.model(s_t)
    
     # generate action list
-    actions = [x for x in 1:4]
+    actions = [x for x in 1:length(keys(model.action_dict))]
 
     # get probabilities
     probs = ProbabilityWeights(πi_sa)
@@ -37,7 +37,6 @@ function A3C_policy_eval(i, t, s_t, r_t, model)
     model.RL.params.r_sa[i, t] = r_t
     model.RL.params.s_t[i,:, t] = s_t
     model.RL.params.a_t[i, t] = action
-
     return action
 end
 
@@ -57,7 +56,7 @@ function A3C_policy_train(model)
 
     end
     
-    opt = ADAM()
+    opt = ADAM(0.01)
     global_reward = 0
     dθ = Grads(IdDict(ps => nothing for ps in model.RL.params.θ), model.RL.params.θ)
     dθ_v = Grads(IdDict(ps => nothing for ps in model.RL.params.θ), model.RL.params.θ)

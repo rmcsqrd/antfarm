@@ -23,7 +23,12 @@ function fmp_model_init(rl_arch, sim_params; num_agents=20, num_goals=num_agents
                       :SS=>StateSpace(zeros(Bool, num_agents, num_goals),  # GA
                                       zeros(Bool, num_agents, num_goals),  # GO
                             ),
-                      :Actions=>[(1,0), (0,1), (-1,0), (0,-1)],
+                      :action_dict=>Dict(1=>(0,1),  # up
+                                         2=>(0,-1), # down
+                                         3=>(-1,0), # left
+                                         4=>(1,0),  # right
+                                         5=>(0,0)   # no action
+                                        ),
                       :Agents2RL=>Dict{Int64, Int64}(),  # dict to map Agents.jl agent_ids to RL formulation id values
                       :Goals=>Dict{Int64, Tuple{Float64, Float64}}(),  # dict to map RL formulation goal id's to position of Agents.jl goal (agent.type == :T)
                       :ModelStep=>1,

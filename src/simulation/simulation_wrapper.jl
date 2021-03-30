@@ -36,7 +36,7 @@ function model_run(;num_agents=20,
 
     # specify global MDP formulation (assume 2D)
     #   State = agent position tuple, goal position tuples, GoalAwareness
-    #   Actions = {up, down, left, right}
+    #   Actions = {up, down, left, right, none}
     if rl_type == "A3C"
         rl_arch = a3c_struct_init(sim_params)
     else

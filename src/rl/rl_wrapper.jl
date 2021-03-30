@@ -40,14 +40,9 @@ function RL_Update(model)
             t = model.ModelStep
             r_t = rewards[i]
             a_t = model.RL.policy_evaluate(i, t, s_t, r_t, model)
-            action_dict = Dict(1=>(0,1),  # up
-                               2=>(0,-1), # down
-                               3=>(-1,0), # left
-                               4=>(1,0)   # right
-                              )
 
             # update model
-            model.agents[agent_id].tau = model.agents[agent_id].pos .+ action_dict[a_t]
+            model.agents[agent_id].tau = model.agents[agent_id].pos .+ model.action_dict[a_t]
         end
     end
 
@@ -72,7 +67,7 @@ function a3c_struct_init(sim_params)
     #                .
     #             GA(i,g)
     state_dim = 2+sim_params.num_goals*2 + sim_params.num_goals
-    action_dim = 4
+    action_dim = 5
 
     model = Chain(
                   Dense(state_dim, 128, relu),
