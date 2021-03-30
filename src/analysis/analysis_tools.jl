@@ -10,15 +10,30 @@ function RewardPlot(df)
     plot(1:num_steps, cumulative_reward)
 end
 
-function PlotCurrentReward()
+function PlotCurrentReward(;step=0)
+    r = BSON.load("/Users/riomcmahon/Programming/antfarm/src/data_output/reward_hist.bson")
+    rew = r[:Rewards]
+    if step != 0
+        rew_parse = rew[1:step]
+    else
+        rew_parse = [x for x in rew if x != 0.0]
+    end
+    plt = Plots.scatter(1:length(rew_parse), rew_parse)
+    ylabel!("Reward")
+    title!("Epoch Rewards")
+    xlabel!("Epoch Number")
+    display(plt)
+end
+
+function ContinuousPlotCurrentReward(sim_params)
                   r = BSON.load("/Users/riomcmahon/Programming/antfarm/src/data_output/reward_hist.bson")
                   rew = r[:Rewards]
-                  rew_parse = [x for x in rew if x != 0.0]
+                  rew_parse = rew[1:sim_params.episode_number]
                   plt = Plots.scatter(1:length(rew_parse), rew_parse)
                   ylabel!("Reward")
                   title!("Epoch Rewards")
                   xlabel!("Epoch Number")
-                  display(plt)
+                  savefig("/Users/riomcmahon/Programming/antfarm/src/data_output/reward.png")
              end
 
 function PlotCurrentRewardWindow(window)

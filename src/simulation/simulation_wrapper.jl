@@ -31,6 +31,9 @@ function model_run(;num_agents=20,
                                   1
                                  )
 
+    # setup misc params
+    #BLAS.set_num_threads(1)
+
     # specify global MDP formulation (assume 2D)
     #   State = agent position tuple, goal position tuples, GoalAwareness
     #   Actions = {up, down, left, right}
@@ -88,21 +91,20 @@ function episode_run(rl_arch, sim_params; plot_sim=false)
     if plot_sim == true
         @info "plotting simulation"
         filepath = "/Users/riomcmahon/Desktop/episode_$(sim_params.episode_number).mp4"
-        RunModelPlot(model, agent_step!, model_step!, filepath)
-        #PlotCurrentReward()
+        RunModelPlot(model, agent_step!, model_step!, filepath)  # plot sim_vid
+        ContinuousPlotCurrentReward(sim_params)  # plot losses
     else
 
-        # run simulation
+        # run simulation, update model, and update global policy
         RunModelCollect(model, agent_step!, model_step!)
-        #DebugScreenshotPlot(model) # BONE
-        
-        # update model
         model.RL.policy_train(model)
-
-        # update global policy
         rl_arch.params.θ = model.RL.params.θ
+
     end
+
+    # update sim params
     sim_params.episode_number += 1
+
     return sum(model.RL.params.r_sa)
 end 
 

@@ -3,7 +3,7 @@ mutable struct A3C_Global
     θ     # this is the set of parameters. We share params so θ = θ_v
     r_sa::Array{Float32, 2}  # r_sa(i,t) = reward for agent i at step t
     s_t::Array{Float32, 3}   # s_t(i, :, t) = state for agent i at step t
-    a_t::Array{Int32, 2}     # a_t(i,t) = action index for agent i at step t
+    a_t::Array{Int64, 2}     # a_t(i,t) = action index for agent i at step t
 end
 
 # custom Flux layer
@@ -13,7 +13,7 @@ end
 
 # define custom layer for output
 A3C_Output(in::Int64, out::Int64) = 
-    A3C_Output(randn(out, in))
+    A3C_Output(randn(Float32, out, in))
 
 (m::A3C_Output)(x) = (softmax((m.W*x)[1:size(m.W)[1]-1]),  # π_sa
                       (m.W*x)[size(m.W)[1]])               # v_s
@@ -32,9 +32,6 @@ function A3C_policy_eval(i, t, s_t, r_t, model)
 
     # select action
     action = sample(actions, probs)
-   # println("s_t = $s_t")
-   # println("action = $action")
-   # println("probs = $probs\n")
 
     # update history for training
     model.RL.params.r_sa[i, t] = r_t
@@ -62,18 +59,16 @@ function A3C_policy_train(model)
     
     opt = ADAM()
     global_reward = 0
+    dθ = Grads(IdDict(ps => nothing for ps in model.RL.params.θ), model.RL.params.θ)
+    dθ_v = Grads(IdDict(ps => nothing for ps in model.RL.params.θ), model.RL.params.θ)
     for i in 1:model.num_agents
 
-        # compute initial gradients at end of series (tmax-1)
+        # get initial rewards and initialize gradients
         tmax = model.ModelStep
         _ , R = model.RL.params.model(model.RL.params.s_t[i, :, tmax-1])
-        s_t = model.RL.params.s_t[i, :, tmax-1]
-        a_t = model.RL.params.a_t[i, tmax-1]
-        dθ = gradient(()->actor_loss_function(R, s_t, a_t), model.RL.params.θ)
-        dθ_v = gradient(()->critic_loss_function(R, s_t), model.RL.params.θ)
 
-        # accumulate gradients for rest of series, starting at tmax-2
-        for t in reverse(1:tmax-2)
+        # accumulate gradients
+        for t in reverse(1:tmax-1)
             R = model.RL.params.r_sa[i, t] + model.RL.γ*R
             s_t = model.RL.params.s_t[i, :, t]
             a_t = model.RL.params.a_t[i, t]
@@ -83,9 +78,10 @@ function A3C_policy_train(model)
         end
 
         # update model with accumulated gradients
-        update!(opt, model.RL.params.θ, dθ)
-        update!(opt, model.RL.params.θ, dθ_v)
         global_reward += sum(model.RL.params.r_sa[i, :])
     end
+    display(dθ.grads)
+    update!(opt, model.RL.params.θ, dθ)
+    update!(opt, model.RL.params.θ, dθ_v)
     return global_reward
 end
