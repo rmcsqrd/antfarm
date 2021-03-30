@@ -71,13 +71,13 @@ function a3c_struct_init(sim_params)
 
     model = Chain(
                   Dense(state_dim, 128, relu),
-                  A3C_Output(128, action_dim+1) 
-                 )
+                  Dense(128, action_dim+1)
+                 ) |> gpu
     θ = params(model)
     γ = 0.99
     r_matrix = zeros(Float32, sim_params.num_agents, sim_params.num_steps)
     s_matrix = zeros(Float32, sim_params.num_agents, state_dim, sim_params.num_steps)
-    action_matrix = zeros(Float32, sim_params.num_agents, sim_params.num_steps)
+    action_matrix = zeros(Float32, sim_params.num_agents, action_dim+1, sim_params.num_steps)
     A3C_params = A3C_Global(model, θ, r_matrix, s_matrix, action_matrix)
 
     return RL_Wrapper(A3C_params, A3C_policy_train, A3C_policy_eval, γ)

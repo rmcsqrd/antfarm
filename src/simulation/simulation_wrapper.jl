@@ -3,6 +3,7 @@ export model_run
 mutable struct SimulationParams
     num_agents::Int64
     num_goals::Int64
+
     num_steps::Int64
     num_episodes::Int64
     sim_vid_interval::Int64
@@ -44,9 +45,9 @@ function model_run(;num_agents=20,
     end
 
     # setup prelim stuff for data recording
-    csv_write_path = "/Users/riomcmahon/Programming/antfarm/src/data_output/run_history.csv"
-    model_write_path = "/Users/riomcmahon/Programming/antfarm/src/data_output/model_weights/"
-    reward_write_path = "/Users/riomcmahon/Programming/antfarm/src/data_output/reward_hist.bson"
+    csv_write_path = string(homedir(),"/Programming/antfarm/src/data_output/_run_history.csv")
+    model_write_path = string(homedir(),"/Programming/antfarm/src/data_output/_model_weights/")
+    reward_write_path = string(homedir(),"/Programming/antfarm/src/data_output/_reward_hist.bson")
     reward_hist = zeros(sim_params.num_episodes)
     time_hist = zeros(sim_params.num_episodes)
     
@@ -90,7 +91,7 @@ function episode_run(rl_arch, sim_params; plot_sim=false)
     # run simulation
     if plot_sim == true
         @info "plotting simulation"
-        filepath = "/Users/riomcmahon/Desktop/episode_$(sim_params.episode_number).mp4"
+        filepath = string(homedir(),"/Programming/antfarm/data_output/episode_$(sim_params.episode_number).mp4")
         RunModelPlot(model, agent_step!, model_step!, filepath)  # plot sim_vid
         ContinuousPlotCurrentReward(sim_params)  # plot losses
     else
