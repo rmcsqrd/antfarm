@@ -6,6 +6,7 @@ mutable struct RL_Wrapper
     params  # container for specific RL architecture params
     policy_train  # function for training the RL architecture
     policy_evaluate  # function for evaluating the model state, returns an action
+    episode_init  # function for initializing RL struct at beginning of episode
     γ::Float64  # discount factor
 end
 
@@ -72,7 +73,7 @@ function a3c_struct_init(sim_params)
     model = Chain(
                   Dense(state_dim, 128, relu),
                   Dense(128, action_dim+1)
-                 ) |> gpu
+                 )
     θ = params(model)
     γ = 0.99
     r_matrix = zeros(Float32, sim_params.num_agents, sim_params.num_steps)
@@ -80,7 +81,7 @@ function a3c_struct_init(sim_params)
     action_matrix = zeros(Float32, sim_params.num_agents, action_dim+1, sim_params.num_steps)
     A3C_params = A3C_Global(model, θ, r_matrix, s_matrix, action_matrix)
 
-    return RL_Wrapper(A3C_params, A3C_policy_train, A3C_policy_eval, γ)
+    return RL_Wrapper(A3C_params, A3C_policy_train, A3C_policy_eval, A3C_episode_init, γ)
 
 end
 

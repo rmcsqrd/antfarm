@@ -73,7 +73,7 @@ function model_run(;num_agents=20,
 
 
             # save weights
-            bson(string(model_write_path, "theta_episode$episode.bson"), Dict(:Policy => rl_arch.params))
+            bson(string(model_write_path, "_theta_episode$episode.bson"), Dict(:Policy => rl_arch.params))
         end
     end
 end
@@ -84,14 +84,12 @@ end
 function episode_run(rl_arch, sim_params; plot_sim=false)
 
     # define model
-    model = fmp_model_init(rl_arch, sim_params; num_agents=sim_params.num_agents, 
-                               num_goals=sim_params.num_goals, 
-                               num_steps=sim_params.num_steps)
-    
+    model = fmp_model_init(rl_arch, sim_params)
+
     # run simulation
     if plot_sim == true
         @info "plotting simulation"
-        filepath = string(homedir(),"/Programming/antfarm/data_output/episode_$(sim_params.episode_number).mp4")
+        filepath = string(homedir(),"/Programming/antfarm/src/data_output/episode_$(sim_params.episode_number).mp4")
         RunModelPlot(model, agent_step!, model_step!, filepath)  # plot sim_vid
         ContinuousPlotCurrentReward(sim_params)  # plot losses
     else

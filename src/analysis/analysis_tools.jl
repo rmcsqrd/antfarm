@@ -11,7 +11,7 @@ function RewardPlot(df)
 end
 
 function PlotCurrentReward(;step=0)
-    r = BSON.load("/Users/riomcmahon/Programming/antfarm/src/data_output/reward_hist.bson")
+    r = BSON.load(string(homedir(),"/Programming/antfarm/src/data_output/_reward_hist.bson"))
     rew = r[:Rewards]
     if step != 0
         rew_parse = rew[1:step]
@@ -26,30 +26,30 @@ function PlotCurrentReward(;step=0)
 end
 
 function ContinuousPlotCurrentReward(sim_params)
-                  r = BSON.load("/Users/riomcmahon/Programming/antfarm/src/data_output/reward_hist.bson")
-                  rew = r[:Rewards]
-                  rew_parse = rew[1:sim_params.episode_number]
-                  plt = Plots.scatter(1:length(rew_parse), rew_parse)
-                  ylabel!("Reward")
-                  title!("Epoch Rewards")
-                  xlabel!("Epoch Number")
-                  savefig("/Users/riomcmahon/Programming/antfarm/src/data_output/reward.png")
-             end
+    r = BSON.load(string(homedir(), "/Programming/antfarm/src/data_output/_reward_hist.bson"))
+    rew = r[:Rewards]
+    rew_parse = rew[1:sim_params.episode_number]
+    plt = Plots.scatter(1:length(rew_parse), rew_parse)
+    ylabel!("Reward")
+    title!("Epoch Rewards")
+    xlabel!("Epoch Number")
+    savefig(string(homedir(), "/Programming/antfarm/src/data_output/_reward.png"))
+end
 
 function PlotCurrentRewardWindow(window)
-                  r = BSON.load("/Users/riomcmahon/Programming/antfarm/src/data_output/reward_hist.bson")
-                  rew = r[:Rewards]
-                  rew_parse = [x for x in rew if x != 0.0]
-                  plt = Plots.scatter(1:length(rew_parse), rew_parse)
-                  ylabel!("Reward")
-                  title!("Epoch Rewards")
-                  xlabel!("Epoch Number")
-                  mean_stuff = zeros(length(rew_parse))
-                  for i in window+1:length(rew_parse)
-                      mean = sum(rew_parse[i-window])/window
-                      mean_stuff[i] = mean
-                  end
-                  display(plt)
-                 plot!(twinx(), 1:length(rew_parse), mean_stuff, ylabel="Rolling Average Reward, window=$window")
-             end
+    r = BSON.load(string(homedir(), "/Programming/antfarm/src/data_output/_reward_hist.bson"))
+    rew = r[:Rewards]
+    rew_parse = [x for x in rew if x != 0.0]
+    plt = Plots.scatter(1:length(rew_parse), rew_parse)
+    ylabel!("Reward")
+    title!("Epoch Rewards")
+    xlabel!("Epoch Number")
+    mean_stuff = zeros(length(rew_parse))
+    for i in window+1:length(rew_parse)
+      mean = sum(rew_parse[i-window])/window
+      mean_stuff[i] = mean
+    end
+    display(plt)
+    plot!(twinx(), 1:length(rew_parse), mean_stuff, ylabel="Rolling Average Reward, window=$window")
+end
 

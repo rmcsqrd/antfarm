@@ -11,17 +11,17 @@ mutable struct FMP_Agent <: AbstractAgent
     Gi::Vector{Int64} ## array of neighboring goal IDs
 end
 
-function fmp_model_init(rl_arch, sim_params; num_agents=20, num_goals=num_agents, num_steps=1500)
+function fmp_model_init(rl_arch, sim_params)
 
     # first define model properties/space/etc for ABM
     properties = Dict(:FMP_params=>fmp_parameter_init(),
                       :dt => 0.05,
-                      :num_agents=>num_agents,
-                      :num_goals=>num_goals,
-                      :num_steps=>num_steps,
+                      :num_agents=>sim_params.num_agents,
+                      :num_goals=>sim_params.num_goals,
+                      :num_steps=>sim_params.num_steps,
                       :step_inc=>2,
-                      :SS=>StateSpace(zeros(Bool, num_agents, num_goals),  # GA
-                                      zeros(Bool, num_agents, num_goals),  # GO
+                      :SS=>StateSpace(zeros(Bool, sim_params.num_agents, sim_params.num_goals),  # GA
+                                      zeros(Bool, sim_params.num_agents, sim_params.num_goals),  # GO
                             ),
                       :action_dict=>Dict(1=>(0,1),  # up
                                          2=>(0,-1), # down
@@ -37,6 +37,9 @@ function fmp_model_init(rl_arch, sim_params; num_agents=20, num_goals=num_agents
 
     space2d = ContinuousSpace((1,1); periodic = true)
     model = ABM(FMP_Agent, space2d, properties=properties)
+
+    # next, initialize RL for the episode
+    model.RL.episode_init(model)
     
     # next, initialize model by adding in agents
     if sim_params.sim_type == "lost_hiker"
