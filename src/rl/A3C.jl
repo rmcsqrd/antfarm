@@ -61,61 +61,41 @@ function A3C_policy_train(model)
 
         # initialize stuff and calculate rewards
         tmax = model.ModelStep
-        R = zeros(tmax)
-        R[tmax]= model.RL.params.model(model.RL.params.s_t[i, :, tmax-1])[length(keys(model.action_dict))+1]
-        for t in reverse(1:tmax-1)
+        R = zeros(tmax-1)
+        R[tmax-1]= model.RL.params.model(model.RL.params.s_t[i, :, tmax-1])[length(keys(model.action_dict))+1]
+        for t in reverse(1:tmax-2)
             R[t] = model.RL.params.r_sa[i, t] + model.RL.γ*R[t+1]
         end
-        R = R[1:tmax-1]
 
         # get state in proper shape, compute gradients, update
         s_t = model.RL.params.s_t[i, :, :]
         a_t = model.RL.params.a_t[i, :, :]
-#        println("rewards = ")
-#        display(model.RL.params.r_sa)
-#        println("state = ")
-#        display(s_t)
-#        println("actions = ")
-#        display(a_t)
-        dθ = gradient(()->actor_loss_function(R, s_t, a_t), model.RL.params.θ)
+        dθ = gradient(model.RL.params.θ) do
+            actor_loss = actor_loss_function(R, s_t, a_t)
+
+            # was having issues with NaN so this returns an "empty" gradient so
+            # you don't poison the well
+            if isnan(actor_loss) || isinf(actor_loss)
+                return dropgrad(actor_loss)
+            else
+                return actor_loss
+            end
+        end
+        dθ_v = gradient(model.RL.params.θ) do
+            critic_loss = critic_loss_function(R, s_t)
+
+            # was having issues with NaN so this returns an "empty" gradient so
+            # you don't poison the well
+            if isnan(critic_loss) || isinf(critic_loss)
+                return dropgrad(critic_loss)
+            else
+                return critic_loss
+            end
+        end
         display(dθ.grads)
-        dθ_v = gradient(()->critic_loss_function(R, s_t), model.RL.params.θ)
-
-        # begin bone
-#        al = actor_loss_function(R, s_t, a_t)
-#        sl = critic_loss_function(R, s_t)
-#            y=model.RL.params.model(s_t)
-#            π_sa = diag(y'a_t)
-#            v_s = y[size(y)[1], :]
-#            res = sum(log.(softmax(π_sa)) .* (R-v_s))
-#            display(al)
-#            display(sl)
-#            display(y)
-#            display(π_sa)
-#            display(v_s)
-#            display(res)
-#            dump_dict = Dict(:al=>al,
-#                             :sl=>sl,
-#                             :s_t=>s_t,
-#                             :a_t=>a_t,
-#                             :R=>R,
-#                             :y=>y,
-#                             :pisa=>π_sa,
-#                             :v_s=>v_s,
-#                             :res=>res,
-#                             :model=>model.RL.params.model,
-#                             :dθ=>dθ,
-#                             :dθ_v=>dθ_v,
-#                            )
-#            BSON.bson("/Users/riomcmahon/Desktop/pre_dump_dict.bson", dump_dict)
-
-        # end bone
+        display(dθ_v.grads)
         update!(opt, model.RL.params.θ, dθ)
         update!(opt, model.RL.params.θ, dθ_v)
-#        if sum(isnan.(model.RL.params.model[1].W)) > 0 ||sum(isnan.(model.RL.params.model[2].W)) > 0
-#            @error "shit my pants"
-#            stuff
-#        end
 
         # update model with accumulated gradients
         global_reward += sum(model.RL.params.r_sa[i, :])
