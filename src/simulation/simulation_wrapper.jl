@@ -3,13 +3,13 @@ export model_run
 mutable struct SimulationParams
     num_agents::Int64
     num_goals::Int64
-
     num_steps::Int64
     num_episodes::Int64
     sim_vid_interval::Int64
     sim_type::String
     rl_type::String
     episode_number::Int64
+    prev_run::String
 end
 
 function model_run(;num_agents=20,
@@ -19,18 +19,33 @@ function model_run(;num_agents=20,
                     sim_vid_interval = 100,
                     sim_type = "lost_hiker",
                     rl_type = "A3C",
+                    prev_run="none",
                   )
 
     # setup simulation parameters
-    sim_params = SimulationParams(num_agents,
+    println(prev_run)
+    if prev_run != "none"
+        @info "Loading previous model..."
+        prev_model = BSON.load(prev_run, @__MODULE__)
+        sim_params = prev_model[:sim_params]
+        sim_params.prev_run = prev_run
+        reward_hist = prev_model[:reward_hist]
+        time_hist = prev_model[:time_hit]
+    else
+        @info "No previous model specified, starting from scratch..."
+        sim_params = SimulationParams(num_agents,
                                   num_goals,
                                   num_steps,
                                   num_episodes,
                                   sim_vid_interval,
                                   sim_type,
                                   rl_type,
-                                  1
+                                  1,
+                                  prev_run,
                                  )
+        reward_hist = zeros(sim_params.num_episodes)
+        time_hist = zeros(sim_params.num_episodes)
+    end
 
     # setup misc params
     #BLAS.set_num_threads(1)
@@ -48,11 +63,9 @@ function model_run(;num_agents=20,
     csv_write_path = string(homedir(),"/Programming/antfarm/src/data_output/_run_history.csv")
     model_write_path = string(homedir(),"/Programming/antfarm/src/data_output/_model_weights/")
     reward_write_path = string(homedir(),"/Programming/antfarm/src/data_output/_reward_hist.bson")
-    reward_hist = zeros(sim_params.num_episodes)
-    time_hist = zeros(sim_params.num_episodes)
     
     # train model
-    for episode in 1:num_episodes
+    for episode in sim_params.episode_number:sim_params.num_episodes
         println("\nEpoch #$episode of $num_episodes")
 
         if episode % sim_vid_interval == 0
@@ -73,7 +86,13 @@ function model_run(;num_agents=20,
 
 
             # save weights
-            bson(string(model_write_path, "_theta_episode$episode.bson"), Dict(:Policy => rl_arch.params))
+            bson(string(model_write_path, "_theta_episode$episode.bson"), 
+                 Dict(:Policy => rl_arch.params,
+                      :sim_params => sim_params,
+                      :reward_hist => reward_hist,
+                      :time_hist => time_hist,
+                     )
+                )
         end
     end
 end

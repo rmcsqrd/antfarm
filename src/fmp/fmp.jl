@@ -20,9 +20,10 @@ function fmp_model_init(rl_arch, sim_params)
                       :num_goals=>sim_params.num_goals,
                       :num_steps=>sim_params.num_steps,
                       :step_inc=>2,
-                      :SS=>StateSpace(zeros(Bool, sim_params.num_agents, sim_params.num_goals),  # GA
-                                      zeros(Bool, sim_params.num_agents, sim_params.num_goals),  # GO
-                            ),
+                      :SS=>StateSpace(  #GA, GO
+                           zeros(Bool, sim_params.num_agents, sim_params.num_goals),
+                           zeros(Bool, sim_params.num_agents, sim_params.num_goals),
+                                     ),
                       :action_dict=>Dict(1=>(0,1),  # up
                                          2=>(0,-1), # down
                                          3=>(-1,0), # left

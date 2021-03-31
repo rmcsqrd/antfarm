@@ -13,7 +13,14 @@ function LostHiker(model)
         vel = (0,0)
         tau = (rand(0:0.01:x), rand(0:0.01:y))
         radius = model.FMP_params.d/2
-        color = string("#", hex(range(HSV(0,1,1), stop=HSV(-360,1,1), length=model.num_agents)[i]))
+
+        if model.num_agents > 1
+            # if only one agent this returns an error
+            color = string("#", hex(range(HSV(0,1,1), stop=HSV(-360,1,1), length=model.num_agents)[i]))
+        else
+            color = "#FF0000"
+        end
+
 
         # seed agents with random positions initially
         add_agent!(pos, model, vel, pos, color, :A, radius, model.space.extent, [], [])
@@ -31,7 +38,12 @@ function SimpleTest(model)
         vel = (0,0)
         tau = (0.2*x, 0.5*y)
         radius = model.FMP_params.d/2
-        color = string("#", hex(range(HSV(0,1,1), stop=HSV(-360,1,1), length=model.num_agents)[i]))
+        if model.num_agents > 1
+            # if only one agent this returns an error
+            color = string("#", hex(range(HSV(0,1,1), stop=HSV(-360,1,1), length=model.num_agents)[i]))
+        else
+            color = "#FF0000"
+        end
         # seed agents with random positions initially
         add_agent!(pos, model, vel, pos, color, :A, radius, model.space.extent, [], [])
 
@@ -41,7 +53,12 @@ function SimpleTest(model)
         vel = (0,0)
         tau = (0.2*x, 0.5*y)
         radius = model.FMP_params.d/2
-        color = string("#", hex(range(HSV(0,1,1), stop=HSV(-360,1,1), length=model.num_agents)[i]))
+        if model.num_agents > 1
+            # if only one agent this returns an error
+            color = string("#", hex(range(HSV(0,1,1), stop=HSV(-360,1,1), length=model.num_agents)[i]))
+        else
+            color = "#FF0000"
+        end
 
         # add targets normally
         add_agent!(tau, model, vel, tau, color, :T, radius, model.space.extent, [], [])
