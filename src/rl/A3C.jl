@@ -70,33 +70,39 @@ function A3C_policy_train(model)
         # get state in proper shape, compute gradients, update
         s_t = model.RL.params.s_t[i, :, :]
         a_t = model.RL.params.a_t[i, :, :]
-        dθ = gradient(model.RL.params.θ) do
-            actor_loss = actor_loss_function(R, s_t, a_t)
+        dθ = gradient(()->actor_loss_function(R, s_t, a_t), model.RL.params.θ)
+        dθ_v = gradient(()->critic_loss_function(R, s_t), model.RL.params.θ)
 
-            # was having issues with NaN so this returns an "empty" gradient so
-            # you don't poison the well
-            if isnan(actor_loss) || isinf(actor_loss)
-                return dropgrad(actor_loss)
-            else
-                return actor_loss
+        # NaN sometimes creeps in so we check if it is in the gradient and
+        # don't update if yes
+        skip = 0
+        for i in 1:length(values(dθ.grads))
+            vals = [value for value in values(dθ.grads)]
+            try
+                if any(isnan, vals[i])
+                    skip = 1
+                end
+            catch
             end
         end
-        dθ_v = gradient(model.RL.params.θ) do
-            critic_loss = critic_loss_function(R, s_t)
-
-            # was having issues with NaN so this returns an "empty" gradient so
-            # you don't poison the well
-            if isnan(critic_loss) || isinf(critic_loss)
-                return dropgrad(critic_loss)
-            else
-                return critic_loss
+        for i in 1:length(values(dθ_v.grads))
+            vals = [value for value in values(dθ_v.grads)]
+            try
+                if any(isnan, vals[i])
+                    skip = 1
+                end
+            catch
             end
         end
-        display(dθ.grads)
-        display(dθ_v.grads)
-        update!(opt, model.RL.params.θ, dθ)
-        update!(opt, model.RL.params.θ, dθ_v)
 
+        if skip == 0
+            update!(opt, model.RL.params.θ, dθ)
+            update!(opt, model.RL.params.θ, dθ_v)
+        end
+        #display(dθ.grads)
+        #display(dθ_v.grads)
+        #display(model.RL.params.θ)
+        
         # update model with accumulated gradients
         global_reward += sum(model.RL.params.r_sa[i, :])
     end
