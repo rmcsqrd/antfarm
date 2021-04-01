@@ -38,34 +38,21 @@ function A3C_policy_eval(i, t, s_t, r_t, model)
     model.RL.params.r_sa[i, t] = r_t
     model.RL.params.s_t[i,:, t] = s_t
     model.RL.params.a_t[i, action, t] = 1
+
     return action
 end
 
 function A3C_policy_train(model)
+
     # create loss functions
     function actor_loss_function(R, s_t, a_t)
         y = model.RL.params.model(s_t)
-
-        # this is the loss function that converges
-        π_sa = diag(y[1:size(y)[1]-1,:]'a_t)  # this returns a 1xk vector, this softmax is done on 
-        v_s = y[size(y)[1], :]
-       # display(y)
-       # display(v_s)
-       # display(π_sa)
-       # display(softmax(π_sa))
-
-        # this is the loss function that hasn't converged
-        #π_s = softmax(y[1:size(y)[1]-1, :]) # probabilities of all actions
-        #v_s = y[size(y)[1], :]              # value function
-        #π_sa = diag(π_s'a_t)                # probability of selected action
-        #display(v_s)
-        #display(π_sa)
-        #display(y[:,1])
-        #display(π_s)
+        π_s = softmax(y[1:size(y)[1]-1, :]) # probabilities of all actions
+        v_s = y[size(y)[1], :]              # value function
+        π_sa = diag(π_s'a_t)                # probability of selected action
         #H = -model.RL.params.β*sum(π_s .* log.(π_s), dims=1)  # entropy
         #return sum((log.(π_sa) .* (R-v_s))+vec(H))
-        #return sum((log.(π_sa) .* (R-v_s)))
-        return sum(log.(softmax(π_sa)) .* (R-v_s))
+        return sum((log.(π_sa) .* (R-v_s)))
     end
 
     function critic_loss_function(R, s_t)
@@ -74,57 +61,40 @@ function A3C_policy_train(model)
         return sum((R-v_s).^2)
 
     end
+    # TRAINING OVERVIEW
+    # 1. initialize empty grads
+    # 2. accumulate gradients for each agent
+    # 3. update model params
     
-    opt = ADAM(model.RL.params.η)
+    #opt = ADAM(model.RL.params.η)
+    opt = ADAM(100)
     global_reward = 0
+    dθ = Grads(IdDict(ps => nothing for ps in model.RL.params.θ), model.RL.params.θ)
+    dθ_v = Grads(IdDict(ps => nothing for ps in model.RL.params.θ), model.RL.params.θ)
     for i in 1:model.num_agents
 
         # initialize stuff and calculate rewards
         tmax = model.ModelStep
-        R = zeros(tmax-1)
-        R[tmax-1]= model.RL.params.model(model.RL.params.s_t[i, :, tmax-1])[length(keys(model.action_dict))+1]
-        for t in reverse(1:tmax-2)
+        R = zeros(tmax)
+        R[tmax]= model.RL.params.model(model.RL.params.s_t[i, :, tmax-1])[length(keys(model.action_dict))+1]
+        for t in reverse(1:tmax-1)
             R[t] = model.RL.params.r_sa[i, t] + model.RL.γ*R[t+1]
         end
+        R = R[1:tmax-1]
 
         # get state in proper shape, compute gradients, update
         s_t = model.RL.params.s_t[i, :, :]
         a_t = model.RL.params.a_t[i, :, :]
-        dθ = gradient(()->actor_loss_function(R, s_t, a_t), model.RL.params.θ)
-        dθ_v = gradient(()->critic_loss_function(R, s_t), model.RL.params.θ)
-
-        # NaN sometimes creeps in so we check if it is in the gradient and
-        # don't update if yes
-        skip = 0
-        for i in 1:length(values(dθ.grads))
-            vals = [value for value in values(dθ.grads)]
-            try
-                if any(isnan, vals[i])
-                    skip = 1
-                end
-            catch
-            end
-        end
-        for i in 1:length(values(dθ_v.grads))
-            vals = [value for value in values(dθ_v.grads)]
-            try
-                if any(isnan, vals[i])
-                    skip = 1
-                end
-            catch
-            end
-        end
-
-        if skip == 0
-            update!(opt, model.RL.params.θ, dθ)
-            update!(opt, model.RL.params.θ, dθ_v)
-        end
-        #display(dθ.grads)
-        #display(dθ_v.grads)
+        dθ .+= gradient(()->actor_loss_function(R, s_t, a_t), model.RL.params.θ)
+        dθ_v .+= gradient(()->critic_loss_function(R, s_t), model.RL.params.θ)
         
         # update model with accumulated gradients
         global_reward += sum(model.RL.params.r_sa[i, :])
     end
-        display(model.RL.params.θ)
+    update!(opt, model.RL.params.θ, dθ)
+    update!(opt, model.RL.params.θ, dθ_v)
+    display(model.RL.params.θ)
+    display(dθ.grads)
+    display(dθ_v.grads)
     return global_reward
 end
