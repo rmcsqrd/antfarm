@@ -60,8 +60,10 @@ function model_run(;num_agents=20,
     end
 
     # setup prelim stuff for data recording
-    csv_write_path = string(homedir(),"/Programming/antfarm/src/data_output/_run_history.csv")
     model_write_path = string(homedir(),"/Programming/antfarm/src/data_output/_model_weights/")
+    if !isdir(model_write_path)
+        mkdir(model_write_path)  # it gets deleted when I archive the data
+    end
     reward_write_path = string(homedir(),"/Programming/antfarm/src/data_output/_reward_hist.bson")
     
     # train model
@@ -109,8 +111,8 @@ function episode_run(rl_arch, sim_params; plot_sim=false)
     if plot_sim == true
         @info "plotting simulation"
         filepath = string(homedir(),"/Programming/antfarm/src/data_output/episode_$(sim_params.episode_number).mp4")
+        ContinuousPlotCurrentReward(sim_params)  # plot losses/rewards
         RunModelPlot(model, agent_step!, model_step!, filepath)  # plot sim_vid
-        ContinuousPlotCurrentReward(sim_params)  # plot losses
     else
 
         # run simulation, update model, and update global policy

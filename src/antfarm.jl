@@ -3,12 +3,10 @@ module antfarm
 # imports
 using Revise
 using Debugger
-using CSV
 using Colors
 using Random
 using Plots
 using LinearAlgebra
-using ProgressMeter
 using Flux
 using Zygote: Params, Grads, @showgrad, dropgrad
 using Flux.Optimise: update!

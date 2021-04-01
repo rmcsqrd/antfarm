@@ -45,11 +45,27 @@ function A3C_policy_train(model)
     # create loss functions
     function actor_loss_function(R, s_t, a_t)
         y = model.RL.params.model(s_t)
-        π_s = softmax(y[1:size(y)[1]-1, :]) # probabilities of all actions
-        v_s = y[size(y)[1], :]              # value function
-        π_sa = diag(π_s'a_t)                # probability of selected action
-        H = -model.RL.params.β*sum(π_s .* log.(π_s), dims=1)  # entropy
-        return sum((log.(π_sa) .* (R-v_s))+vec(H))
+
+        # this is the loss function that converges
+        π_sa = diag(y[1:size(y)[1]-1,:]'a_t)  # this returns a 1xk vector, this softmax is done on 
+        v_s = y[size(y)[1], :]
+       # display(y)
+       # display(v_s)
+       # display(π_sa)
+       # display(softmax(π_sa))
+
+        # this is the loss function that hasn't converged
+        #π_s = softmax(y[1:size(y)[1]-1, :]) # probabilities of all actions
+        #v_s = y[size(y)[1], :]              # value function
+        #π_sa = diag(π_s'a_t)                # probability of selected action
+        #display(v_s)
+        #display(π_sa)
+        #display(y[:,1])
+        #display(π_s)
+        #H = -model.RL.params.β*sum(π_s .* log.(π_s), dims=1)  # entropy
+        #return sum((log.(π_sa) .* (R-v_s))+vec(H))
+        #return sum((log.(π_sa) .* (R-v_s)))
+        return sum(log.(softmax(π_sa)) .* (R-v_s))
     end
 
     function critic_loss_function(R, s_t)
@@ -105,10 +121,10 @@ function A3C_policy_train(model)
         end
         #display(dθ.grads)
         #display(dθ_v.grads)
-        #display(model.RL.params.θ)
         
         # update model with accumulated gradients
         global_reward += sum(model.RL.params.r_sa[i, :])
     end
+        display(model.RL.params.θ)
     return global_reward
 end
