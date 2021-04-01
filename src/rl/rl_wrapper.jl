@@ -28,7 +28,8 @@ function RL_Update(model)
 
             # next, compare GA with goal locations. Return true location if
             # agent i is aware of goal location, (Inf, Inf) if not
-            goal_pos_i = [xi == 1 ? yi : model.agents[agent_id].pos for xi in GAi, yi in goal_loc_array[1,:]]  # BONE, make sure this is working
+            goal_pos_i = [xi == 1 ? yi : (-1,-1) for xi in GAi, yi in goal_loc_array[1,:]]  
+            
 
             # vectorize to create state. Need to use iterators because
             # vec(Tuple) doesn't work
@@ -85,8 +86,8 @@ function a3c_struct_init(sim_params)
     end
 
     γ = 0.99
-    η = 0.001
-    β = 0.05
+    η = 0.005
+    β = 0.0
     r_matrix = zeros(Float32, sim_params.num_agents, sim_params.num_steps)
     s_matrix = zeros(Float32, sim_params.num_agents, state_dim, sim_params.num_steps)
     action_matrix = zeros(Float32, sim_params.num_agents, action_dim, sim_params.num_steps)

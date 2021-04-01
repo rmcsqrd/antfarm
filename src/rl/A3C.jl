@@ -50,9 +50,9 @@ function A3C_policy_train(model)
         π_s = softmax(y[1:size(y)[1]-1, :]) # probabilities of all actions
         v_s = y[size(y)[1], :]              # value function
         π_sa = diag(π_s'a_t)                # probability of selected action
-        #H = -model.RL.params.β*sum(π_s .* log.(π_s), dims=1)  # entropy
-        #return sum((log.(π_sa) .* (R-v_s))+vec(H))
-        return sum((log.(π_sa) .* (R-v_s)))
+        H = -model.RL.params.β*sum(π_s .* log.(π_s), dims=1)  # entropy
+        return sum((log.(π_sa) .* (R-v_s))+vec(H))
+        #return sum((log.(π_sa) .* (R-v_s)))
     end
 
     function critic_loss_function(R, s_t)
@@ -66,8 +66,7 @@ function A3C_policy_train(model)
     # 2. accumulate gradients for each agent
     # 3. update model params
     
-    #opt = ADAM(model.RL.params.η)
-    opt = ADAM(100)
+    opt = ADAM(model.RL.params.η)
     global_reward = 0
     dθ = Grads(IdDict(ps => nothing for ps in model.RL.params.θ), model.RL.params.θ)
     dθ_v = Grads(IdDict(ps => nothing for ps in model.RL.params.θ), model.RL.params.θ)
@@ -94,7 +93,7 @@ function A3C_policy_train(model)
     update!(opt, model.RL.params.θ, dθ)
     update!(opt, model.RL.params.θ, dθ_v)
     display(model.RL.params.θ)
-    display(dθ.grads)
-    display(dθ_v.grads)
+    #display(dθ.grads)
+    #display(dθ_v.grads)
     return global_reward
 end

@@ -14,6 +14,7 @@ end
 function fmp_model_init(rl_arch, sim_params)
 
     # first define model properties/space/etc for ABM
+    extents = (1,1)
     properties = Dict(:FMP_params=>fmp_parameter_init(),
                       :dt => 0.05,
                       :num_agents=>sim_params.num_agents,
@@ -36,7 +37,7 @@ function fmp_model_init(rl_arch, sim_params)
                       :RL=>rl_arch,
                      )
 
-    space2d = ContinuousSpace((1,1); periodic = true)
+    space2d = ContinuousSpace(extents; periodic = false)
     model = ABM(FMP_Agent, space2d, properties=properties)
 
     # next, initialize RL for the episode
@@ -79,6 +80,12 @@ end
 
 # define agent/model step stuff
 function agent_step!(agent, model)
+    # check model extents to respect boundary
+    px, py = agent.pos .+ model.dt .* agent.vel
+    ex, ey = model.space.extent
+    if !(0 ≤ px ≤ ex && 0 ≤ py ≤ ey)
+        agent.vel = (0.0, 0.0)
+    end
     move_agent!(agent, model, model.dt)
 end
 
@@ -89,7 +96,7 @@ function model_step!(model)
     fmp_update_interacting_pairs(model)
     for agent_id in keys(model.agents)
         fmp_update_vel(model.agents[agent_id], model)
-        end
+    end
 
     # do RL stuff 
     RL_Update(model)
