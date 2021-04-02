@@ -36,20 +36,43 @@ function ContinuousPlotCurrentReward(sim_params)
     savefig(string(homedir(), "/Programming/antfarm/src/data_output/_reward.png"))
 end
 
-function PlotCurrentRewardWindow(window)
-    r = BSON.load(string(homedir(), "/Programming/antfarm/src/data_output/_reward_hist.bson"))
+function PlotRewardWindow(n=100)
+    r = BSON.load(string(homedir(),"/Programming/antfarm/src/data_output/_reward_hist.bson"))
     rew = r[:Rewards]
-    rew_parse = [x for x in rew if x != 0.0]
-    plt = Plots.scatter(1:length(rew_parse), rew_parse)
-    ylabel!("Reward")
-    title!("Epoch Rewards")
-    xlabel!("Epoch Number")
-    mean_stuff = zeros(length(rew_parse))
-    for i in window+1:length(rew_parse)
-      mean = sum(rew_parse[i-window])/window
-      mean_stuff[i] = mean
-    end
-    display(plt)
-    plot!(twinx(), 1:length(rew_parse), mean_stuff, ylabel="Rolling Average Reward, window=$window")
-end
+    rew = rew[rew .!= 0.0]  # maybe a little fast and loose but chance of exactly 0.0 reward is low
 
+    μ = zeros(length(rew))  # this makes indexing easier, we'll lop off zero values later
+    σ = zeros(length(μ))
+    for k in n+1:length(rew)
+        μ[k] = sum(rew[k-n:k])/n
+        σ[k] = sum((rew[k-n:k] .- μ[k]) .^ 2)/n
+    end
+
+    μ = μ[n+1:length(μ)]
+    σ = σ[n+1:length(σ)]
+    σ_scale = 0.001
+    σ = σ_scale .* σ
+
+    plt = Plots.scatter(1:length(rew), rew,
+                        label="Loss @ Epoch",
+                        legend=:bottomleft,
+                        markerstrokewidth=0,
+                        markersize=1.5,
+                        markercolor="#60d9cb"
+                       )
+    Plots.plot!(n+1:length(rew), μ,
+                label="\"Sliding Window\" Training Loss (n = $n)",
+                color="#d9cb60"
+               )
+    Plots.plot!(n+1:length(rew), μ+ 2 .* σ,
+                label="+/- $σ_scale*2σ Variance",
+                color="#cb60d9")
+    Plots.plot!(n+1:length(rew), μ- 2 .* σ,
+                label="",
+                color="#cb60d9")
+    xlabel!("Epoch")
+    ylabel!("Training Loss")
+    title!("Training Loss Over Time")
+    savefig(string(homedir(), "/Programming/antfarm/src/data_output/_reward.png"))
+
+end

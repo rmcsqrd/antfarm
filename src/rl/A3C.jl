@@ -52,7 +52,6 @@ function A3C_policy_train(model)
         π_sa = diag(π_s'a_t)                # probability of selected action
         H = -model.RL.params.β*sum(π_s .* log.(π_s), dims=1)  # entropy
         return sum((log.(π_sa) .* (R-v_s))+vec(H))
-        #return sum((log.(π_sa) .* (R-v_s)))
     end
 
     function critic_loss_function(R, s_t)

@@ -18,7 +18,7 @@ end
 """
 Run model and create output plot
 """
-function RunModelPlot(model, agent_step!, model_step!, filepath)
+function RunModelPlot(model, agent_step!, model_step!, filepath, sim_params)
     # delete original file
     try
         rm(filepath)
@@ -31,7 +31,7 @@ function RunModelPlot(model, agent_step!, model_step!, filepath)
         model,
         agent_step!,
         model_step!,
-        title = "FMP Simulation",
+        title = "FMP Simulation, Epoch #$(sim_params.episode_number)",
         frames = model.num_steps,
         framerate = 100,
         resolution = (600, 600),

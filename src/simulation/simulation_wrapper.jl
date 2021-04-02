@@ -111,8 +111,8 @@ function episode_run(rl_arch, sim_params; plot_sim=false)
     if plot_sim == true
         @info "plotting simulation"
         filepath = string(homedir(),"/Programming/antfarm/src/data_output/episode_$(sim_params.episode_number).mp4")
-        ContinuousPlotCurrentReward(sim_params)  # plot losses/rewards
-        RunModelPlot(model, agent_step!, model_step!, filepath)  # plot sim_vid
+        PlotRewardWindow()  # plot losses/rewards
+        RunModelPlot(model, agent_step!, model_step!, filepath, sim_params)  # plot sim_vid
     else
 
         # run simulation, update model, and update global policy
