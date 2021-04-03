@@ -66,9 +66,9 @@ function A3C_policy_train(model)
     # 3. update model params
     
     opt = ADAM(model.RL.params.η)
-    global_reward = 0
     dθ = Grads(IdDict(ps => nothing for ps in model.RL.params.θ), model.RL.params.θ)
     dθ_v = Grads(IdDict(ps => nothing for ps in model.RL.params.θ), model.RL.params.θ)
+    training_loss = 0
     for i in 1:model.num_agents
 
         # initialize stuff and calculate rewards
@@ -83,16 +83,25 @@ function A3C_policy_train(model)
         # get state in proper shape, compute gradients, update
         s_t = model.RL.params.s_t[i, :, :]
         a_t = model.RL.params.a_t[i, :, :]
-        dθ .+= gradient(()->actor_loss_function(R, s_t, a_t), model.RL.params.θ)
-        dθ_v .+= gradient(()->critic_loss_function(R, s_t), model.RL.params.θ)
-        
-        # update model with accumulated gradients
-        global_reward += sum(model.RL.params.r_sa[i, :])
+        #dθ .+= gradient(()->actor_loss_function(R, s_t, a_t), model.RL.params.θ)
+        #dθ_v .+= gradient(()->critic_loss_function(R, s_t), model.RL.params.θ)
+        dθ .+= gradient(model.RL.params.θ) do
+            actor_loss = actor_loss_function(R, s_t, a_t)
+            training_loss += actor_loss
+            return actor_loss
+        end
+        dθ_v .+= gradient(model.RL.params.θ) do
+            critic_loss = critic_loss_function(R, s_t)
+            training_loss += critic_loss
+            return critic_loss
+        end
     end
     update!(opt, model.RL.params.θ, dθ)
     update!(opt, model.RL.params.θ, dθ_v)
     display(model.RL.params.θ)
+    println("Training Loss for Epoch = $training_loss")
     #display(dθ.grads)
     #display(dθ_v.grads)
-    return global_reward
+    
+    return training_loss
 end

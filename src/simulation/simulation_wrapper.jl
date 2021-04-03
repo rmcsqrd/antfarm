@@ -23,14 +23,14 @@ function model_run(;num_agents=20,
                   )
 
     # setup simulation parameters
-    println(prev_run)
     if prev_run != "none"
         @info "Loading previous model..."
         prev_model = BSON.load(prev_run, @__MODULE__)
         sim_params = prev_model[:sim_params]
         sim_params.prev_run = prev_run
         reward_hist = prev_model[:reward_hist]
-        time_hist = prev_model[:time_hit]
+        time_hist = prev_model[:time_hist]
+        loss_hist = prev_model[:loss_hist]
     else
         @info "No previous model specified, starting from scratch..."
         sim_params = SimulationParams(num_agents,
@@ -45,6 +45,7 @@ function model_run(;num_agents=20,
                                  )
         reward_hist = zeros(sim_params.num_episodes)
         time_hist = zeros(sim_params.num_episodes)
+        loss_hist = zeros(sim_params.num_episodes)
     end
 
     # setup misc params
@@ -71,18 +72,19 @@ function model_run(;num_agents=20,
         println("\nEpoch #$episode of $num_episodes")
 
         if episode % sim_vid_interval == 0
-            reward_hist[episode] = episode_run(rl_arch, sim_params, plot_sim=true)
+            reward_hist[episode], loss_hist[episode] = episode_run(rl_arch, sim_params, plot_sim=true)
 
         else
 
             start_time = time()
-            reward_hist[episode] = episode_run(rl_arch, sim_params)
-            # BONE - need to figure out how to save policy
+            reward_hist[episode], loss_hist[episode] = episode_run(rl_arch, sim_params)
 
             end_time = time()
             time_hist[episode] = end_time-start_time
             bson(reward_write_path, Dict(:Rewards=>reward_hist,
-                                         :TimeHist=>time_hist))
+                                         :TimeHist=>time_hist,
+                                         :Loss=>loss_hist,
+                                        ))
             println("Global Reward for Epoch = $(reward_hist[episode])")
             println("Time Elapsed for Epoch = ", end_time-start_time)
 
@@ -93,6 +95,7 @@ function model_run(;num_agents=20,
                       :sim_params => sim_params,
                       :reward_hist => reward_hist,
                       :time_hist => time_hist,
+                      :loss_hist => loss_hist,
                      )
                 )
         end
@@ -107,24 +110,23 @@ function episode_run(rl_arch, sim_params; plot_sim=false)
     # define model
     model = fmp_model_init(rl_arch, sim_params)
 
-    # run simulation
+    # record simulation if needed
     if plot_sim == true
         @info "plotting simulation"
         filepath = string(homedir(),"/Programming/antfarm/src/data_output/episode_$(sim_params.episode_number).mp4")
         PlotRewardWindow()  # plot losses/rewards
         RunModelPlot(model, agent_step!, model_step!, filepath, sim_params)  # plot sim_vid
-    else
-
-        # run simulation, update model, and update global policy
-        RunModelCollect(model, agent_step!, model_step!)
-        model.RL.policy_train(model)
-        rl_arch.params.θ = model.RL.params.θ
-
+        model = fmp_model_init(rl_arch, sim_params)  # reinit model
     end
+
+    # run simulation, update model, and update global policy
+    RunModelCollect(model, agent_step!, model_step!)
+    training_loss = model.RL.policy_train(model)
+    rl_arch.params.θ = model.RL.params.θ
 
     # update sim params
     sim_params.episode_number += 1
 
-    return sum(model.RL.params.r_sa)
+    return sum(model.RL.params.r_sa), training_loss
 end 
 
