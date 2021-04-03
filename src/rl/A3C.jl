@@ -80,21 +80,16 @@ function A3C_policy_train(model)
         end
         R = R[1:tmax-1]
 
-        # get state in proper shape, compute gradients, update
+        # get state in proper shape, compute gradients, record loses, update
         s_t = model.RL.params.s_t[i, :, :]
         a_t = model.RL.params.a_t[i, :, :]
-        #dθ .+= gradient(()->actor_loss_function(R, s_t, a_t), model.RL.params.θ)
-        #dθ_v .+= gradient(()->critic_loss_function(R, s_t), model.RL.params.θ)
-        dθ .+= gradient(model.RL.params.θ) do
-            actor_loss = actor_loss_function(R, s_t, a_t)
-            training_loss += actor_loss
-            return actor_loss
-        end
-        dθ_v .+= gradient(model.RL.params.θ) do
-            critic_loss = critic_loss_function(R, s_t)
-            training_loss += critic_loss
-            return critic_loss
-        end
+        dθ .+= gradient(()->actor_loss_function(R, s_t, a_t), model.RL.params.θ)
+        dθ_v .+= gradient(()->critic_loss_function(R, s_t), model.RL.params.θ)
+        # BONE, the double call to loss functions is accruing a lot of overhead
+        # but I am unclear if putting it inside the gradient call is screwing
+        # things up
+        training_loss += actor_loss_function(R, s_t, a_t)
+        training_loss += critic_loss_function(R, s_t)
     end
     update!(opt, model.RL.params.θ, dθ)
     update!(opt, model.RL.params.θ, dθ_v)
