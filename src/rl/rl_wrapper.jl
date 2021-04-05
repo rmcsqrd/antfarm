@@ -86,7 +86,7 @@ function a3c_struct_init(sim_params)
     end
 
     γ = 0.99
-    η = 0.00005
+    η = 0.0005
     β = 0.05
     r_matrix = zeros(Float32, sim_params.num_agents, sim_params.num_steps)
     s_matrix = zeros(Float32, sim_params.num_agents, state_dim, sim_params.num_steps)

@@ -80,12 +80,12 @@ function PlotRewardWindow(n=100)
                 color="#d99960",
                 linewidth=3,
                )
-    Plots.plot!(p1, mid_point+1:length(rew)-mid_point, μ+ 2 .* σ,
-                label="+/- $σ_scale*2σ Variance",
-                color="#cb60d9")
-    Plots.plot!(p1, mid_point+1:length(rew)-mid_point, μ+ 2 .* σ,
-                label="",
-                color="#cb60d9")
+#    Plots.plot!(p1, mid_point+1:length(rew)-mid_point, μ+ 2 .* σ,
+#                label="+/- $σ_scale*2σ Variance",
+#                color="#cb60d9")
+#    Plots.plot!(p1, mid_point+1:length(rew)-mid_point, μ+ 2 .* σ,
+#                label="",
+#                color="#cb60d9")
 
     # plot loss stuff
     title!("Reward Over Time")
@@ -103,12 +103,12 @@ function PlotRewardWindow(n=100)
                     linewidth=3,
                     label="\"Sliding Window\" Average Loss (n = $n)",
                )
-    Plots.plot!(p2, mid_point+1:length(loss)-mid_point, μ_loss+ 2 .* σ_loss,
-                label="+/- $σ_scale*2σ Variance",
-                color="#cb60d9")
-    Plots.plot!(p2,mid_point+1:length(loss)-mid_point, μ_loss- 2 .* σ_loss,
-                label="",
-                color="#cb60d9")
+#    Plots.plot!(p2, mid_point+1:length(loss)-mid_point, μ_loss+ 2 .* σ_loss,
+#                label="+/- $σ_scale*2σ Variance",
+#                color="#cb60d9")
+#    Plots.plot!(p2,mid_point+1:length(loss)-mid_point, μ_loss- 2 .* σ_loss,
+#                label="",
+#                color="#cb60d9")
     title!("Training Loss Over Time")
     xlabel!("Epoch")
     plot(p1,p2, layout=(2,1), size=(1000,1000))

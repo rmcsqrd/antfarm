@@ -83,17 +83,27 @@ function A3C_policy_train(model)
         # get state in proper shape, compute gradients, record loses, update
         s_t = model.RL.params.s_t[i, :, :]
         a_t = model.RL.params.a_t[i, :, :]
-        dθ .+= gradient(()->actor_loss_function(R, s_t, a_t), model.RL.params.θ)
-        dθ_v .+= gradient(()->critic_loss_function(R, s_t), model.RL.params.θ)
+        #dθ .+= gradient(()->actor_loss_function(R, s_t, a_t), model.RL.params.θ)
+        #dθ_v .+= gradient(()->critic_loss_function(R, s_t), model.RL.params.θ)
+        dθ .+= gradient(model.RL.params.θ) do
+            al = actor_loss_function(R, s_t, a_t)
+            training_loss += al
+            return al
+        end
+        dθ_v .+= gradient(model.RL.params.θ) do
+            cl = critic_loss_function(R, s_t)
+            training_loss += cl
+            return cl
+        end
         # BONE, the double call to loss functions is accruing a lot of overhead
         # but I am unclear if putting it inside the gradient call is screwing
         # things up
-        training_loss += actor_loss_function(R, s_t, a_t)
-        training_loss += critic_loss_function(R, s_t)
+        #training_loss += actor_loss_function(R, s_t, a_t)
+        #training_loss += critic_loss_function(R, s_t)
     end
     update!(opt, model.RL.params.θ, dθ)
     update!(opt, model.RL.params.θ, dθ_v)
-    display(model.RL.params.θ)
+    #display(model.RL.params.θ)
     println("Training Loss for Epoch = $training_loss")
     #display(dθ.grads)
     #display(dθ_v.grads)
