@@ -14,11 +14,11 @@ end
 
 function model_run(;num_agents=20,
                     num_goals = 20,
-                    num_steps = 5000,
-                    num_episodes = 10000,
+                    num_steps = 5000,     # number of steps per episode (epoch)
+                    num_episodes = 10000, # number of episodes (epochs)
                     sim_vid_interval = 100,
                     sim_type = "lost_hiker",
-                    rl_type = "A3C",
+                    rl_type = "DQN",
                     prev_run="none",
                   )
 
@@ -55,7 +55,11 @@ function model_run(;num_agents=20,
     #   State = agent position tuple, goal position tuples, GoalAwareness
     #   Actions = {up, down, left, right, none}
     if rl_type == "A3C"
+        @info "A3C Selected"
         rl_arch = a3c_struct_init(sim_params)
+    elseif rl_type == "DQN"
+        @info "DQN Selected"
+        rl_arch = dqn_struct_init(sim_params)
     else
         @error "RL type unknown"
     end
@@ -122,11 +126,17 @@ function episode_run(rl_arch, sim_params; plot_sim=false)
     # run simulation, update model, and update global policy
     RunModelCollect(model, agent_step!, model_step!)
     training_loss = model.RL.policy_train(model)
-    rl_arch.params.θ = model.RL.params.θ
+    sim_params.episode_number += 1
+    if sim_params.rl_type == "A3C"
+        rl_arch.params.θ = model.RL.params.θ  # BONE, how to handle this, required
+        return sum(model.RL.params.r_sa), training_loss
+    elseif sim_params.rl_type == "DQN"
+        rl_arch.params.Q == model.RL.params.Q
+        return sum(model.RL.params.r_t)/model.num_steps, training_loss
+    end
+    #for RL
 
     # update sim params
-    sim_params.episode_number += 1
 
-    return sum(model.RL.params.r_sa), training_loss
 end 
 

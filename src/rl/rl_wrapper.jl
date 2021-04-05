@@ -97,3 +97,35 @@ function a3c_struct_init(sim_params)
 
 end
 
+
+#######################################################################################
+# DQN STUFF
+#######################################################################################
+
+function dqn_struct_init(sim_params)
+    state_dim = 2+sim_params.num_goals*2 + sim_params.num_goals
+    action_dim = 5
+    if sim_params.prev_run == "none"
+        model = Chain(
+                      Dense(state_dim, 128, relu),
+                      Dense(128, action_dim)
+                     )
+    else
+        # load in previous model
+        prev_model = BSON.load(sim_params.prev_run, @__MODULE__)
+        model = prev_model[:Policy].model
+        θ = prev_model[:Policy].θ
+    end
+    γ = 0.99
+    η = 0.0005
+    ϵ = 0.05
+    minibatch_len = 10_000
+    Q̂_rew = -Inf
+    r_matrix = zeros(Float32, sim_params.num_agents, sim_params.num_steps)
+    s_matrix = zeros(Float32, sim_params.num_agents, state_dim, sim_params.num_steps)
+    action_matrix = zeros(Float32, sim_params.num_agents, sim_params.num_steps)
+    DQN_params = DQN_Global(model, deepcopy(model), Q̂_rew, η, ϵ, minibatch_len, r_matrix, s_matrix, action_matrix)
+
+    return RL_Wrapper(DQN_params, DQN_policy_train, DQN_policy_eval, DQN_episode_init, γ)
+
+end

@@ -34,7 +34,7 @@ function A3C_policy_eval(i, t, s_t, r_t, model)
     # select action
     action = sample(actions, probs)
 
-    # update history for training
+    # update history for araining
     model.RL.params.r_sa[i, t] = r_t
     model.RL.params.s_t[i,:, t] = s_t
     model.RL.params.a_t[i, action, t] = 1

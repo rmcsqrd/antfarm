@@ -30,6 +30,7 @@ include("rl/rl_wrapper.jl")
 include("rl/MDP_formulation.jl")
 #include("rl/POMDP_formulation.jl")
 include("rl/A3C.jl")
+include("rl/DQN.jl")
 
 # include analysis stuff
 include("analysis/analysis_tools.jl")
