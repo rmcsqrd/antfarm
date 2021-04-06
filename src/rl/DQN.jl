@@ -100,6 +100,7 @@ function DQN_episode_init(model, rl_arch)
     model.RL.params.s_t = s_matrix
     model.RL.params.a_t = action_matrix
     model.RL.params.Q̂ = rl_arch.params.Q̂    
+    model.RL.params.Q = rl_arch.params.Q̂    
     model.RL.params.Q̂_rew = rl_arch.params.Q̂_rew
 
 end
