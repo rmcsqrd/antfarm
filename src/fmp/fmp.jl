@@ -44,7 +44,7 @@ function fmp_model_init(rl_arch, sim_params)
                       :action_dict=>action_dict,
                       :Agents2RL=>Dict{Int64, Int64}(),  # dict to map Agents.jl agent_ids to RL formulation id values
                       :Goals=>Dict{Int64, Tuple{Float64, Float64}}(),  # dict to map RL formulation goal id's to position of Agents.jl goal (agent.type == :T)
-                      :ModelStep=>1,
+                      :t=>1,  # current step
                       :RL=>rl_arch,
                       :sim_params=>sim_params,
                      )
@@ -100,9 +100,9 @@ function fmp_model_reset!(model)
 
     # remove all agents, reset step counter, clear out goal/agent dicts
     genocide!(model)
-    model.ModelStep = 1
     model.Agents2RL = Dict{Int64, Int64}()
     model.Goals = Dict{Int64, Tuple{Float64, Float64}}()
+    model.t = 1
 
     # finally, re-add in agents
     fmp_model_add_agents!(model)
@@ -121,7 +121,6 @@ function agent_step!(agent, model)
 end
 
 function model_step!(model)
-
     # do FMP stuff - figure out interacting pairs and update velocities
     # accordingly
     fmp_update_interacting_pairs(model)
@@ -131,8 +130,8 @@ function model_step!(model)
 
     # do RL stuff 
     RL_Update!(model)
-    
-    # step model
-    model.ModelStep += 1
 
+    # step forward
+    model.t += 1
+    
 end

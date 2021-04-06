@@ -16,7 +16,7 @@ end
 
 function RL_Update!(model)
     # update global state (goal awareness/goal occupation)
-    GlobalStateTransition(model)
+    GlobalStateTransition!(model)
     
     # compute rewards
     rewards = GlobalReward(model)
@@ -43,9 +43,8 @@ function RL_Update!(model)
             s_t = round.(s_t, digits = 3)  # round to limit state space
             
             # select action according to RL policy
-            t = model.ModelStep
             r_t = rewards[i]
-            a_t = model.RL.policy_evaluate(i, t, s_t, r_t, model)
+            a_t = model.RL.policy_evaluate(i, model.t, s_t, r_t, model)
 
             # update model
             model.agents[agent_id].tau = model.agents[agent_id].pos .+ model.action_dict[a_t]
@@ -55,7 +54,7 @@ function RL_Update!(model)
 
 end
 
-function GlobalStateTransition(model)
+function GlobalStateTransition!(model)
     model.SS.GO = zeros(Bool, model.num_agents, model.num_goals)
 
     # update goal awareness based on agent/target interaction

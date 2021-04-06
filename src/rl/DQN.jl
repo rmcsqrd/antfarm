@@ -5,7 +5,7 @@ mutable struct DQN_Global
     opt   # optimiser
     ϵ     # ϵ-greedy parameter
     minibatch_length::Int64  # how many data samples are trained on
-    r_t::Array{Float32, 2}   # r_sa(i,t) = reward for agent i at step t
+    r_t::Array{Float32, 2}   # r_t(i,t) = reward for agent i at step t
     s_t::Array{Float32, 3}   # s_t(i, :, t) = state for agent i at step t
     a_t::Array{Int64, 2}     # a_t(i, t) = action  for agent i at step t 
 end
