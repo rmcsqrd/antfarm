@@ -6,6 +6,55 @@ mutable struct StateSpace
     GO::Array{Bool,2}
 end
 
+mutable struct RL_Wrapper
+    params  # container for specific RL architecture params
+    policy_train!  # function for training the RL architecture
+    policy_evaluate  # function for evaluating the model state, returns an action
+    episode_init!  # function for initializing RL struct at beginning of episode
+    γ::Float64  # discount factor
+end
+
+function RL_Update!(model)
+    # update global state (goal awareness/goal occupation)
+    GlobalStateTransition(model)
+    
+    # compute rewards
+    rewards = GlobalReward(model)
+
+    # next, do individual agent actions
+    goal_loc_array = sort(collect(values(model.Goals)))
+    for agent_id in keys(model.agents)
+        if model.agents[agent_id].type == :A
+            i = model.Agents2RL[agent_id]
+
+            # first, determine agent i's knowledge of goal positions
+            GAi = model.SS.GA[i, :]
+
+            # next, compare GA with goal locations. Return true location if
+            # agent i is aware of goal location, (Inf, Inf) if not
+            goal_pos_i = [xi == 1 ? yi : (-1,-1) for xi in GAi, yi in goal_loc_array[1,:]]  
+            
+            # vectorize to create state. Need to use iterators because
+            # vec(Tuple) doesn't work
+            s_t = [collect(Iterators.flatten(model.agents[agent_id].pos));
+                   collect(Iterators.flatten(goal_pos_i));
+                   vec(GAi)
+                  ]
+            s_t = round.(s_t, digits = 3)  # round to limit state space
+            
+            # select action according to RL policy
+            t = model.ModelStep
+            r_t = rewards[i]
+            a_t = model.RL.policy_evaluate(i, t, s_t, r_t, model)
+
+            # update model
+            model.agents[agent_id].tau = model.agents[agent_id].pos .+ model.action_dict[a_t]
+
+        end
+    end
+
+end
+
 function GlobalStateTransition(model)
     model.SS.GO = zeros(Bool, model.num_agents, model.num_goals)
 

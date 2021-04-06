@@ -1,27 +1,23 @@
 mutable struct A3C_Global
     model # this is the NN model used for evaluation
     θ     # this is the set of parameters. We share params so θ = θ_v
-    η     # this is learning rate
     β     # this is entropy parameter
+    opt   # this is optimizer
     r_sa::Array{Float32, 2}  # r_sa(i,t) = reward for agent i at step t
     s_t::Array{Float32, 3}   # s_t(i, :, t) = state for agent i at step t
     a_t::Array{Int64, 3}     # a_t(i, : ,t) = action index for agent i at step t (all zeros except at index of action. Bottom row is all zeros
 end
 
-function A3C_episode_init(model, rl_arch)
+function A3C_episode_init!(model)
     state_dim = 2+model.num_goals*2 + model.num_goals
     action_dim = length(keys(model.action_dict))
-    r_matrix = zeros(Float32, model.num_agents, model.num_steps)
-    s_matrix = zeros(Float32, model.num_agents, state_dim, model.num_steps)
-    action_matrix = zeros(Float32, model.num_agents, action_dim, model.num_steps)
-
-    model.RL.params.r_sa = r_matrix
-    model.RL.params.s_t = s_matrix
-    model.RL.params.a_t = action_matrix
+    model.RL.params.r_sa = zeros(Float32, model.num_agents, model.num_steps)
+    model.RL.params.s_t = zeros(Float32, model.num_agents, state_dim, model.num_steps)
+    model.RL.params.a_t = zeros(Float32, model.num_agents, action_dim, model.num_steps)
 
 end
 
-function A3C_policy_eval(i, t, s_t, r_t, model)
+function A3C_policy_eval!(i, t, s_t, r_t, model)
     y = model.RL.params.model(s_t)
     π_sa = y[1:length(keys(model.action_dict))]
    
@@ -42,7 +38,7 @@ function A3C_policy_eval(i, t, s_t, r_t, model)
     return action
 end
 
-function A3C_policy_train(model)
+function A3C_policy_train!(model)
 
     # create loss functions
     function actor_loss_function(R, s_t, a_t)
@@ -72,7 +68,6 @@ function A3C_policy_train(model)
     # 2. accumulate gradients for each agent
     # 3. update model params
     
-    opt = ADAM(model.RL.params.η)
     dθ = Grads(IdDict(ps => nothing for ps in model.RL.params.θ), model.RL.params.θ)
     dθ_v = Grads(IdDict(ps => nothing for ps in model.RL.params.θ), model.RL.params.θ)
     training_loss = 0
@@ -108,8 +103,8 @@ function A3C_policy_train(model)
         #training_loss += actor_loss_function(R, s_t, a_t)
         #training_loss += critic_loss_function(R, s_t)
     end
-    update!(opt, model.RL.params.θ, dθ)
-    update!(opt, model.RL.params.θ, dθ_v)
+    update!(model.RL.params.opt, model.RL.params.θ, dθ)
+    update!(model.RL.params.opt, model.RL.params.θ, dθ_v)
     #display(model.RL.params.θ)
     println("Training Loss for Epoch = $training_loss")
     #display(dθ.grads)
@@ -117,4 +112,54 @@ function A3C_policy_train(model)
     #display(dθ_v.grads)
     
     return training_loss
+end
+
+function a3c_struct_init(sim_params)
+    
+    # define dimensions
+    # state_dim = agent_position (x,y): this is two coord
+    #             goal_1 (x,y): this is two coords
+    #                .
+    #                .
+    #                .
+    #             goal_g (x,y)
+    #             GA(i,1): this is a scalar
+    #                .
+    #                .
+    #                .
+    #             GA(i,g)
+    state_dim = 2+sim_params.num_goals*2 + sim_params.num_goals
+    action_dim = 0
+    if sim_params.num_dimensions == "1D"
+        action_dim = 3
+    elseif sim_params.num_dimensions == "2D"
+        action_dim = 5
+    else
+        @error "Wrong number of dimensions"
+    end
+
+    if sim_params.prev_run == "none"
+        model = Chain(
+                      Dense(state_dim, 128, relu),
+                      Dense(128, action_dim+1)
+                     )
+        θ = params(model)
+    else
+        # load in previous model
+        prev_model = BSON.load(sim_params.prev_run, @__MODULE__)
+        model = prev_model[:Policy].model
+        θ = prev_model[:Policy].θ
+    end
+
+    γ = 0.99
+    η = 0.0005
+    β = 0.05
+    opt = ADAM(η)
+    r_matrix = zeros(Float32, sim_params.num_agents, sim_params.num_steps)
+    s_matrix = zeros(Float32, sim_params.num_agents, state_dim, sim_params.num_steps)
+    action_matrix = zeros(Float32, sim_params.num_agents, action_dim, sim_params.num_steps)
+    A3C_params = A3C_Global(model, θ, β, opt, r_matrix, s_matrix, action_matrix)
+
+    return RL_Wrapper(A3C_params, A3C_policy_train!, A3C_policy_eval!, A3C_episode_init!, γ)
+
 end

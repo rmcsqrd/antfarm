@@ -1,24 +1,14 @@
 """
-Run model, return data
+Run model only
 """
-function RunModelCollect(model, agent_step!, model_step!)
+function run_model!(model, agent_step!, model_step!)
     run!(model, agent_step!, model_step!, model.num_steps)
 end
 
 """
-Run model only
+Run model and create output video
 """
-function RunModel(model, agent_step!, model_step!)
-    
-    for i in 1:model.num_steps
-        step!(model, agent_step!, model_step!)
-    end
-end
-
-"""
-Run model and create output plot
-"""
-function RunModelPlot(model, agent_step!, model_step!, filepath, sim_params)
+function run_model_plot!(model, agent_step!, model_step!, sim_params)
     # delete original file
     try
         rm(filepath)
@@ -26,6 +16,7 @@ function RunModelPlot(model, agent_step!, model_step!, filepath, sim_params)
     end
 
     # plot stuff
+    filepath = string(homedir(),"/Programming/antfarm/src/data_output/episode_$(sim_params.episode_number).mp4")
     InteractiveDynamics.abm_video(
         filepath,
         model,

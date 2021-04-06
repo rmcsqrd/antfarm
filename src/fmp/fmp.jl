@@ -15,40 +15,58 @@ function fmp_model_init(rl_arch, sim_params)
 
     # first define model properties/space/etc for ABM
     extents = (1,1)
+    action_dict = Dict()
+    if sim_params.num_dimensions == "1D"
+        @info "1D Selected"
+        action_dict[1] = (-1,0)  # left
+        action_dict[2] = (1,0)   # right
+        action_dict[3] = (0,0)   # no action
+    elseif sim_params.num_dimensions == "2D"
+        @info "2D Selected"
+        action_dict[1] = (-1,0)  # left
+        action_dict[2] = (1,0)   # right
+        action_dict[3] = (0,0)   # no action
+        action_dict[4] = (0,1)   # up
+        action_dict[5] = (0,-1)  # down
+    else
+        @error "Incorrect number of Dimensions"
+    end
     properties = Dict(:FMP_params=>fmp_parameter_init(),
                       :dt => 0.05,
                       :num_agents=>sim_params.num_agents,
                       :num_goals=>sim_params.num_goals,
                       :num_steps=>sim_params.num_steps,
-                      :episode_number=>sim_params.episode_number,
                       :step_inc=>2,
                       :SS=>StateSpace(  #GA, GO
                            zeros(Bool, sim_params.num_agents, sim_params.num_goals),
                            zeros(Bool, sim_params.num_agents, sim_params.num_goals),
                                      ),
-                      :action_dict=>Dict(
-                                         1=>(-1,0), # left
-                                         2=>(1,0),  # right
-                                         3=>(0,0)   # no action
-                                         #4=>(0,1),  # up
-                                         #5=>(0,-1), # down
-                                        ),
+                      :action_dict=>action_dict,
                       :Agents2RL=>Dict{Int64, Int64}(),  # dict to map Agents.jl agent_ids to RL formulation id values
                       :Goals=>Dict{Int64, Tuple{Float64, Float64}}(),  # dict to map RL formulation goal id's to position of Agents.jl goal (agent.type == :T)
                       :ModelStep=>1,
                       :RL=>rl_arch,
+                      :sim_params=>sim_params,
                      )
 
     space2d = ContinuousSpace(extents; periodic = false)
     model = ABM(FMP_Agent, space2d, properties=properties)
 
-    # next, initialize RL for the episode
-    model.RL.episode_init(model, rl_arch)
+    # initialize RL for the episode
+    model.RL.episode_init!(model)
+
+    # add in agents
+    fmp_model_add_agents!(model)
     
-    # next, initialize model by adding in agents
-    if sim_params.sim_type == "lost_hiker"
+    return model
+end
+
+function fmp_model_add_agents!(model)
+
+    # initialize model by adding in agents
+    if model.sim_params.sim_type == "lost_hiker"
         LostHiker(model)
-    elseif sim_params.sim_type == "simple_test"
+    elseif model.sim_params.sim_type == "simple_test"
         SimpleTest(model)
     else
         @error "Simulation type not defined"
@@ -76,8 +94,19 @@ function fmp_model_init(rl_arch, sim_params)
             goal_idx += 1
         end
     end
+end
 
-    return model
+function fmp_model_reset!(model)
+
+    # remove all agents, reset step counter, clear out goal/agent dicts
+    genocide!(model)
+    model.ModelStep = 1
+    model.Agents2RL = Dict{Int64, Int64}()
+    model.Goals = Dict{Int64, Tuple{Float64, Float64}}()
+
+    # finally, re-add in agents
+    fmp_model_add_agents!(model)
+
 end
 
 # define agent/model step stuff
@@ -101,7 +130,7 @@ function model_step!(model)
     end
 
     # do RL stuff 
-    RL_Update(model)
+    RL_Update!(model)
     
     # step model
     model.ModelStep += 1

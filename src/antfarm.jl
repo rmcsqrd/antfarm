@@ -20,15 +20,13 @@ import CairoMakie
 
 
 # include simulation stuff
-include("simulation/model_init.jl")
+#include("simulation/model_init.jl")
 include("simulation/simulation_wrapper.jl")
 include("simulation/rl_model_init.jl")
 include("simulation/simulation_utils.jl")
 
 # include RL stuff
-include("rl/rl_wrapper.jl")
 include("rl/MDP_formulation.jl")
-#include("rl/POMDP_formulation.jl")
 include("rl/A3C.jl")
 include("rl/DQN.jl")
 
