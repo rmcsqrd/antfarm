@@ -47,7 +47,6 @@ function A3C_policy_train!(model)
         v_s = y[size(y)[1], :]              # value function
         π_sa = diag(π_s'a_t)                # probability of selected action
         H = -model.RL.params.β*sum(π_s .* log.(π_s), dims=1)  # entropy
-        println("in loss function")
         return sum((log.(π_sa) .* (R-v_s))+vec(H))
     end
 
@@ -86,6 +85,8 @@ function A3C_policy_train!(model)
         # get state in proper shape, compute gradients, record loses, update
         s_t = model.RL.params.s_t[i, :, :]
         a_t = model.RL.params.a_t[i, :, :]
+        display(s_t)
+        display(a_t)
         #dθ .+= gradient(()->actor_loss_function(R, s_t, a_t), model.RL.params.θ)
         #dθ_v .+= gradient(()->critic_loss_function(R, s_t), model.RL.params.θ)
         dθ .+= gradient(model.RL.params.θ) do

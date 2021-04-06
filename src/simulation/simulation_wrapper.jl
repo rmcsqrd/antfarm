@@ -72,9 +72,6 @@ function model_run(;num_agents=20,
     # train model
     for episode in 1:sim_params.num_episodes  # BONE, find clever solution to this
 
-        # update episode number
-        model.sim_params.episode_number = episode
-
         # run episode
         run_time = @elapsed reward_hist[episode], loss_hist[episode] = episode_run!(model)
 
@@ -91,13 +88,14 @@ function model_run(;num_agents=20,
                   :loss_hist => loss_hist,
                  )
             )
-
         # reset agent based model
         fmp_model_reset!(model)
 
         # reset RL parameters for next episode
         model.RL.episode_init!(model)
 
+        # update episode number
+        model.sim_params.episode_number = episode
     end
 end
 
