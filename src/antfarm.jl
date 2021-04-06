@@ -10,7 +10,7 @@ using LinearAlgebra
 using Flux
 using Zygote
 using Zygote: Params, Grads, @showgrad, dropgrad
-using Flux.Optimise: update!
+using Flux.Optimise: update!, train!
 using StatsBase
 using Agents
 using InteractiveDynamics

@@ -37,6 +37,7 @@ function RL_Update(model)
                    collect(Iterators.flatten(goal_pos_i));
                    vec(GAi)
                   ]
+            s_t = round.(s_t, digits = 2)  # round to limit state space
             
             # select action according to RL policy
             t = model.ModelStep
@@ -70,7 +71,7 @@ function a3c_struct_init(sim_params)
     #                .
     #             GA(i,g)
     state_dim = 2+sim_params.num_goals*2 + sim_params.num_goals
-    action_dim = 5
+    action_dim = 3
 
     if sim_params.prev_run == "none"
         model = Chain(
@@ -117,7 +118,8 @@ function dqn_struct_init(sim_params)
     end
     γ = 0.99
     η = 0.0005
-    ϵ(i) = maximum((0.1, (1000-i)/1000))
+    ϵ_factor = 100
+    ϵ(i) = maximum((0.1, (ϵ_factor-i)/ϵ_factor))
     minibatch_len = 5_000
     Q̂_rew = -Inf
     r_matrix = zeros(Float32, sim_params.num_agents, sim_params.num_steps)

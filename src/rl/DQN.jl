@@ -32,13 +32,13 @@ function DQN_policy_train(model)
         for (j, k) in enumerate(data_idx)  # i is agent, j is index, k is time step
             s_t = model.RL.params.s_t[i, :, k]
             s_t1 = model.RL.params.s_t[i, :, k+1]
+            s[:, j] = s_t
+            a[model.RL.params.a_t[i, k], j] = 1
             if k+1 == model.num_steps
                 y[j] = model.RL.params.r_t[k]
             else
                 y[j] = model.RL.params.r_t[k] + model.RL.γ*maximum(model.RL.params.Q̂(s_t1))
             end
-            s[:, j] = s_t
-            a[model.RL.params.a_t[i, k], j] = 1
         end
         
         # define loss function
@@ -57,7 +57,7 @@ function DQN_policy_train(model)
             return loss
         end
     end
-    update!(opt, params(model.RL.params.Q), dθ)
+#    update!(opt, params(model.RL.params.Q), dθ)
 
     # update target network with current if it is better performing
     current_reward = sum(model.RL.params.r_t .* [model.RL.γ^(t-1) for t in 1:model.num_steps])
