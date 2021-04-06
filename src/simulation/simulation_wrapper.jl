@@ -128,15 +128,14 @@ function episode_run(rl_arch, sim_params; plot_sim=false)
     training_loss = model.RL.policy_train(model)
     sim_params.episode_number += 1
     if sim_params.rl_type == "A3C"
-        rl_arch.params.θ = model.RL.params.θ  # BONE, how to handle this, required
+        rl_arch.params.θ = model.RL.params.θ  
         return sum(model.RL.params.r_sa), training_loss
     elseif sim_params.rl_type == "DQN"
-        rl_arch.params.Q == model.RL.params.Q
+        rl_arch.params.Q == model.RL.params.Q̂  # update global to be best model
+        #model.RL.params.ϵ = maximum((0.1, (100-sim_params.episode_number)/100))
         return sum(model.RL.params.r_t)/model.num_steps, training_loss
     end
     #for RL
-
-    # update sim params
 
 end 
 

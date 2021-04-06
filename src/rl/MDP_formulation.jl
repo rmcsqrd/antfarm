@@ -71,7 +71,7 @@ function GlobalReward(model)
             # "invert reward" because gradient descent wants to minimize loss.
             # We want to maximize reward so inversion make large reward as
             # small as possible.
-            rewards[i] = rewards[i]*-1 
+            #rewards[i] = rewards[i]*-1 
 
 
         end

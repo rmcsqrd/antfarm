@@ -25,7 +25,7 @@ function DQN_policy_train(model)
     for i in 1:model.num_agents
 
         # generate minibatch data
-        data_idx = rand(1:model.num_steps-1)  # -1 because 
+        data_idx = rand(1:model.num_steps-1, model.RL.params.minibatch_length)  # -1 because 
         y = zeros(model.RL.params.minibatch_length)
         s = zeros(state_dim, model.RL.params.minibatch_length)
         a = zeros(action_dim, model.RL.params.minibatch_length)
@@ -35,16 +35,18 @@ function DQN_policy_train(model)
             if k+1 == model.num_steps
                 y[j] = model.RL.params.r_t[k]
             else
-                y[j] = model.RL.params.r_t[k] + maximum(model.RL.params.Q̂(s_t1))
+                y[j] = model.RL.params.r_t[k] + model.RL.γ*maximum(model.RL.params.Q̂(s_t1))
             end
             s[:, j] = s_t
-            a[j] = model.RL.params.a_t[i, k]
+            a[model.RL.params.a_t[i, k], j] = 1
         end
         
         # define loss function
         function loss_function(s, a, y)
-            output = model.RL.params.Q(s)
-            Qsa = diag(output'a)
+            out = model.RL.params.Q(s)
+            Qsa = diag(out'a)
+            #H = -model.RL.params.ϵ*sum(softmax(out) .* log.(softmax(out)), dims=1)  # entropy
+            #return sum((y .- Qsa) .^ 2 + vec(H))
             return sum((y .- Qsa) .^ 2)
         end
 
@@ -58,9 +60,11 @@ function DQN_policy_train(model)
     update!(opt, params(model.RL.params.Q), dθ)
 
     # update target network with current if it is better performing
-    current_reward = sum(model.RL.params.r_t)/model.num_steps
-    if current_reward < model.RL.params.Q̂_rew
-        model.RL.params.Q̂ = deepcopy(Q)
+    current_reward = sum(model.RL.params.r_t .* [model.RL.γ^(t-1) for t in 1:model.num_steps])
+    println("Q reward = $current_reward, Q̂ reward = $(model.RL.params.Q̂_rew)")
+    if current_reward > model.RL.params.Q̂_rew
+        @info "Replacing Q̂"
+        model.RL.params.Q̂ = deepcopy(model.RL.params.Q)
         model.RL.params.Q̂_rew = current_reward
     end
 
@@ -72,14 +76,14 @@ end
 
 function DQN_policy_eval(i, t, s_t, r_t, model)
     # select action via ϵ-greedy
-    if rand() < model.RL.params.ϵ
+    if rand() < model.RL.params.ϵ(model.episode_number)
         action = rand(1:length(keys(model.action_dict)))
     else
         action = argmax(model.RL.params.Q(s_t))
     end
 
     # update history for training
-    model.RL.params.r_t[i, t] = r_t^(t-1)
+    model.RL.params.r_t[i, t] = r_t
     model.RL.params.s_t[i, :, t] = s_t
     model.RL.params.a_t[i, t] = action
 end
@@ -94,4 +98,5 @@ function DQN_episode_init(model)
     model.RL.params.r_t = r_matrix
     model.RL.params.s_t = s_matrix
     model.RL.params.a_t = action_matrix
+
 end

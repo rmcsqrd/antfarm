@@ -104,22 +104,21 @@ end
 
 function dqn_struct_init(sim_params)
     state_dim = 2+sim_params.num_goals*2 + sim_params.num_goals
-    action_dim = 5
+    action_dim = 3
     if sim_params.prev_run == "none"
         model = Chain(
-                      Dense(state_dim, 128, relu),
-                      Dense(128, action_dim)
+                      Dense(state_dim, 64, relu),
+                      Dense(64, action_dim)
                      )
     else
         # load in previous model
         prev_model = BSON.load(sim_params.prev_run, @__MODULE__)
         model = prev_model[:Policy].model
-        θ = prev_model[:Policy].θ
     end
     γ = 0.99
     η = 0.0005
-    ϵ = 0.05
-    minibatch_len = 10_000
+    ϵ(i) = maximum((0.1, (1000-i)/1000))
+    minibatch_len = 5_000
     Q̂_rew = -Inf
     r_matrix = zeros(Float32, sim_params.num_agents, sim_params.num_steps)
     s_matrix = zeros(Float32, sim_params.num_agents, state_dim, sim_params.num_steps)

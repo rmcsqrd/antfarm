@@ -20,16 +20,18 @@ function fmp_model_init(rl_arch, sim_params)
                       :num_agents=>sim_params.num_agents,
                       :num_goals=>sim_params.num_goals,
                       :num_steps=>sim_params.num_steps,
+                      :episode_number=>sim_params.episode_number,
                       :step_inc=>2,
                       :SS=>StateSpace(  #GA, GO
                            zeros(Bool, sim_params.num_agents, sim_params.num_goals),
                            zeros(Bool, sim_params.num_agents, sim_params.num_goals),
                                      ),
-                      :action_dict=>Dict(1=>(0,1),  # up
-                                         2=>(0,-1), # down
-                                         3=>(-1,0), # left
-                                         4=>(1,0),  # right
-                                         5=>(0,0)   # no action
+                      :action_dict=>Dict(
+                                         1=>(-1,0), # left
+                                         2=>(1,0),  # right
+                                         3=>(0,0)   # no action
+                                         #4=>(0,1),  # up
+                                         #5=>(0,-1), # down
                                         ),
                       :Agents2RL=>Dict{Int64, Int64}(),  # dict to map Agents.jl agent_ids to RL formulation id values
                       :Goals=>Dict{Int64, Tuple{Float64, Float64}}(),  # dict to map RL formulation goal id's to position of Agents.jl goal (agent.type == :T)
