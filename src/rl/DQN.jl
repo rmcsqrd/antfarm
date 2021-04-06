@@ -24,34 +24,29 @@ function DQN_policy_train!(model)
     for i in 1:model.num_agents
 
         # generate minibatch data
-        data_idx = rand(1:model.num_steps-1, model.RL.params.minibatch_length)  # -1 because 
-        y = zeros(model.RL.params.minibatch_length)
-        s = zeros(state_dim, model.RL.params.minibatch_length)
-        a = zeros(action_dim, model.RL.params.minibatch_length)
+        data_idx = rand(1:model.num_steps-1, model.RL.params.minibatch_length-1)  # -1 because 
+        s_j = model.RL.params.s_t[i, :, data_idx]
+        s_j1 = model.RL.params.s_t[i, :, data_idx .+ 1]
+        r_j = model.RL.params.r_t[i, data_idx]
+        Q̂_j1 = model.RL.params.Q̂(s_j1)
+        y_j = r_j + model.RL.γ .* vec(Q̂_j1[argmax(Q̂_j1, dims=1)])
+       
+        a_j = zeros(action_dim, model.RL.params.minibatch_length-1)
         for (j, k) in enumerate(data_idx)  # i is agent, j is index, k is time step
-            s_t = model.RL.params.s_t[i, :, k]
-            s_t1 = model.RL.params.s_t[i, :, k+1]
-            s[:, j] = s_t
-            a[model.RL.params.a_t[i, k], j] = 1
-            if k+1 == model.num_steps
-                y[j] = model.RL.params.r_t[k]
-            else
-                y[j] = model.RL.params.r_t[k] + model.RL.γ*maximum(model.RL.params.Q̂(s_t1))
-            end
+            a_j[model.RL.params.a_t[i, k], j] = 1
         end
+
         
         # define loss function
         function loss_function(s, a, y)
             out = model.RL.params.Q(s)
             Qsa = diag(out'a)
-            #H = -model.RL.params.ϵ*sum(softmax(out) .* log.(softmax(out)), dims=1)  # entropy
-            #return sum((y .- Qsa) .^ 2 + vec(H))
             return sum((y .- Qsa) .^ 2)
         end
 
         # do gradient descent and update model
         dθ .+= gradient(params(model.RL.params.Q)) do
-            loss = loss_function(s, a, y)
+            loss = loss_function(s_j, a_j, y_j)
             training_loss += loss
             return loss
         end
@@ -59,8 +54,8 @@ function DQN_policy_train!(model)
     update!(model.RL.params.opt, params(model.RL.params.Q), dθ)
 
     # update target network with current if it is better performing
-    current_reward = sum(model.RL.params.r_t .* [model.RL.γ^(t-1) for t in 1:model.num_steps])
-    println("Q reward = $current_reward, Q̂ reward = $(model.RL.params.Q̂_rew)")
+    current_reward = sum(model.RL.params.r_t)
+    println("Q reward: $(current_reward), Q̂ reward : $(model.RL.params.Q̂_rew)")
     if current_reward > model.RL.params.Q̂_rew
         @info "Replacing Q̂"
         model.RL.params.Q̂ = deepcopy(model.RL.params.Q)
@@ -79,7 +74,7 @@ function DQN_policy_eval!(i, t, s_t, r_t, model)
     if rand() < model.RL.params.ϵ(model.sim_params.episode_number)
         action = rand(1:length(keys(model.action_dict)))
     else
-        action = argmax(model.RL.params.Q(s_t))
+        action = argmax(model.RL.params.Q̂(s_t))
     end
 
     # update history for training
@@ -120,7 +115,7 @@ function dqn_struct_init(sim_params)
     end
     γ = 0.99
     η = 0.001
-    ϵ_factor = 5000
+    ϵ_factor = 100
     ϵ(i) = maximum((0.1, (ϵ_factor-i)/ϵ_factor))
     minibatch_len = 5_000
     Q̂_rew = -Inf

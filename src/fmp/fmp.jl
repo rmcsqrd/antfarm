@@ -103,6 +103,8 @@ function fmp_model_reset!(model)
     model.Agents2RL = Dict{Int64, Int64}()
     model.Goals = Dict{Int64, Tuple{Float64, Float64}}()
     model.t = 1
+    model.SS.GO = zeros(Bool, model.num_agents, model.num_goals)
+    model.SS.GA = zeros(Bool, model.num_agents, model.num_goals)
 
     # finally, re-add in agents
     fmp_model_add_agents!(model)
