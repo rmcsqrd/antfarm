@@ -76,9 +76,9 @@ function model_run(;num_agents=20,
         run_time = @elapsed reward_hist[episode], loss_hist[episode] = episode_run!(model)
 
         # write output to console
-        println("\nEpoch #$episode of $num_episodes")
-        println("Global Reward for Epoch = $(reward_hist[episode])")
-        println("Time Elapsed for Epoch = $run_time")
+        println("\nEpisode #$episode of $num_episodes")
+        println("Global Reward for Episode = $(reward_hist[episode])")
+        println("Time Elapsed for Episode = $run_time")
 
         # save weights
         bson(string(model_write_path, "_theta_episode$episode.bson"), 

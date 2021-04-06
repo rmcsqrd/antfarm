@@ -4,6 +4,7 @@ module antfarm
 using Revise
 using Debugger
 using Colors
+using ProgressMeter: @showprogress
 using Random
 using Plots
 using LinearAlgebra
