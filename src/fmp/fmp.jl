@@ -43,7 +43,7 @@ function fmp_model_init(rl_arch, sim_params)
     model = ABM(FMP_Agent, space2d, properties=properties)
 
     # next, initialize RL for the episode
-    model.RL.episode_init(model)
+    model.RL.episode_init(model, rl_arch)
     
     # next, initialize model by adding in agents
     if sim_params.sim_type == "lost_hiker"

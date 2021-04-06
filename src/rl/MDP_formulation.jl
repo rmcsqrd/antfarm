@@ -68,12 +68,6 @@ function GlobalReward(model)
             # agents pay penalty for goals they don't know location of
             rewards[i] += -0.1*sum(1 .- model.SS.GA[i, :])
 
-            # "invert reward" because gradient descent wants to minimize loss.
-            # We want to maximize reward so inversion make large reward as
-            # small as possible.
-            rewards[i] = rewards[i]*-1 
-
-
         end
     end
     return rewards

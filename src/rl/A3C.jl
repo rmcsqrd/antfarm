@@ -8,7 +8,7 @@ mutable struct A3C_Global
     a_t::Array{Int64, 3}     # a_t(i, : ,t) = action index for agent i at step t (all zeros except at index of action. Bottom row is all zeros
 end
 
-function A3C_episode_init(model)
+function A3C_episode_init(model, rl_arch)
     state_dim = 2+model.num_goals*2 + model.num_goals
     action_dim = length(keys(model.action_dict))
     r_matrix = zeros(Float32, model.num_agents, model.num_steps)
@@ -60,6 +60,13 @@ function A3C_policy_train(model)
         return sum((R-v_s).^2)
 
     end
+
+    # "invert reward" because gradient descent wants to minimize loss.
+    # We want to maximize reward so inversion make large reward as
+    # small as possible.
+    model.RL.params.r_sa .*= -1 
+
+
     # TRAINING OVERVIEW
     # 1. initialize empty grads
     # 2. accumulate gradients for each agent
@@ -106,6 +113,7 @@ function A3C_policy_train(model)
     #display(model.RL.params.θ)
     println("Training Loss for Epoch = $training_loss")
     #display(dθ.grads)
+    display(dθ.params)
     #display(dθ_v.grads)
     
     return training_loss

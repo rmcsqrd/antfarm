@@ -30,14 +30,13 @@ function RL_Update(model)
             # agent i is aware of goal location, (Inf, Inf) if not
             goal_pos_i = [xi == 1 ? yi : (-1,-1) for xi in GAi, yi in goal_loc_array[1,:]]  
             
-
             # vectorize to create state. Need to use iterators because
             # vec(Tuple) doesn't work
             s_t = [collect(Iterators.flatten(model.agents[agent_id].pos));
                    collect(Iterators.flatten(goal_pos_i));
                    vec(GAi)
                   ]
-            s_t = round.(s_t, digits = 2)  # round to limit state space
+            s_t = round.(s_t, digits = 3)  # round to limit state space
             
             # select action according to RL policy
             t = model.ModelStep
@@ -71,7 +70,7 @@ function a3c_struct_init(sim_params)
     #                .
     #             GA(i,g)
     state_dim = 2+sim_params.num_goals*2 + sim_params.num_goals
-    action_dim = 3
+    action_dim = 3  # BONEgtg
 
     if sim_params.prev_run == "none"
         model = Chain(
@@ -108,8 +107,8 @@ function dqn_struct_init(sim_params)
     action_dim = 3
     if sim_params.prev_run == "none"
         model = Chain(
-                      Dense(state_dim, 64, relu),
-                      Dense(64, action_dim)
+                      Dense(state_dim, 128, relu),
+                      Dense(128, action_dim)
                      )
     else
         # load in previous model
@@ -117,8 +116,8 @@ function dqn_struct_init(sim_params)
         model = prev_model[:Policy].model
     end
     γ = 0.99
-    η = 0.0005
-    ϵ_factor = 100
+    η = 0.001
+    ϵ_factor = 5000
     ϵ(i) = maximum((0.1, (ϵ_factor-i)/ϵ_factor))
     minibatch_len = 5_000
     Q̂_rew = -Inf

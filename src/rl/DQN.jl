@@ -57,7 +57,7 @@ function DQN_policy_train(model)
             return loss
         end
     end
-#    update!(opt, params(model.RL.params.Q), dθ)
+    update!(opt, params(model.RL.params.Q), dθ)
 
     # update target network with current if it is better performing
     current_reward = sum(model.RL.params.r_t .* [model.RL.γ^(t-1) for t in 1:model.num_steps])
@@ -69,6 +69,7 @@ function DQN_policy_train(model)
     end
 
     println("Training Loss for Epoch = $training_loss")
+    #display(dθ.params)
     #display(dθ.grads)
     
     return training_loss
@@ -88,7 +89,7 @@ function DQN_policy_eval(i, t, s_t, r_t, model)
     model.RL.params.a_t[i, t] = action
 end
 
-function DQN_episode_init(model)
+function DQN_episode_init(model, rl_arch)
     state_dim = 2+model.num_goals*2 + model.num_goals
     action_dim = length(keys(model.action_dict))
     r_matrix = zeros(Float32, model.num_agents, model.num_steps)
@@ -98,5 +99,7 @@ function DQN_episode_init(model)
     model.RL.params.r_t = r_matrix
     model.RL.params.s_t = s_matrix
     model.RL.params.a_t = action_matrix
+    model.RL.params.Q̂ = rl_arch.params.Q̂    
+    model.RL.params.Q̂_rew = rl_arch.params.Q̂_rew
 
 end
