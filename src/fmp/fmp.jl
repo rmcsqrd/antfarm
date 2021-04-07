@@ -18,16 +18,16 @@ function fmp_model_init(rl_arch, sim_params)
     action_dict = Dict()
     if sim_params.num_dimensions == "1D"
         @info "1D Selected"
-        action_dict[1] = (-1,0)  # left
-        action_dict[2] = (1,0)   # right
+        action_dict[1] = (-0.1,0)  # left
+        action_dict[2] = (0.1,0)   # right
         action_dict[3] = (0,0)   # no action
     elseif sim_params.num_dimensions == "2D"
         @info "2D Selected"
-        action_dict[1] = (-1,0)  # left
-        action_dict[2] = (1,0)   # right
+        action_dict[1] = (-0.1,0)  # left
+        action_dict[2] = (0.1,0)   # right
         action_dict[3] = (0,0)   # no action
-        action_dict[4] = (0,1)   # up
-        action_dict[5] = (0,-1)  # down
+        action_dict[4] = (0,0.1)   # up
+        action_dict[5] = (0,-0.1)  # down
     else
         @error "Incorrect number of Dimensions"
     end
@@ -51,9 +51,6 @@ function fmp_model_init(rl_arch, sim_params)
 
     space2d = ContinuousSpace(extents; periodic = false)
     model = ABM(FMP_Agent, space2d, properties=properties)
-
-    # initialize RL for the episode
-    model.RL.episode_init!(model)
 
     # add in agents
     fmp_model_add_agents!(model)
@@ -119,7 +116,7 @@ function agent_step!(agent, model)
     if !(0 ≤ px ≤ ex && 0 ≤ py ≤ ey)
         agent.vel = (0.0, 0.0)
     end
-    #move_agent!(agent, model, model.dt)  #BONE
+    move_agent!(agent, model, model.dt)
 end
 
 function model_step!(model)

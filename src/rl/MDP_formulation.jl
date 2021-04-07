@@ -9,7 +9,7 @@ end
 mutable struct RL_Wrapper
     params  # container for specific RL architecture params
     policy_train!  # function for training the RL architecture
-    policy_evaluate  # function for evaluating the model state, returns an action
+    policy_evaluate!  # function for evaluating the model state, returns an action
     episode_init!  # function for initializing RL struct at beginning of episode
     γ::Float64  # discount factor
 end
@@ -37,14 +37,14 @@ function RL_Update!(model)
             # vectorize to create state. Need to use iterators because
             # vec(Tuple) doesn't work
             s_t = [collect(Iterators.flatten(model.agents[agent_id].pos));
-                   collect(Iterators.flatten(goal_pos_i));
-                   vec(GAi)
+                   #collect(Iterators.flatten(goal_pos_i));  # BONE
+                   #vec(GAi)  # BONE
                   ]
-            s_t = round.(s_t, digits = 3)  # round to limit state space
-            
+            s_t = round.(s_t, digits = 2)  # round to limit state space
+          
             # select action according to RL policy
             r_t = rewards[i]
-            a_t = model.RL.policy_evaluate(i, model.t, s_t, r_t, model)
+            a_t = model.RL.policy_evaluate!(i, model.t, s_t, r_t, model)
 
             # update model
             model.agents[agent_id].tau = model.agents[agent_id].pos .+ model.action_dict[a_t]
