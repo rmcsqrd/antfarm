@@ -106,15 +106,15 @@ function GlobalReward(model)
                 j = model.Agents2RL[neighbor_id]
                 info_exchange = xor.(model.SS.GA[i, :], model.SS.GA[j, :])
                 beta = sum(info_exchange)/model.num_goals
-                rewards[i] += 10*beta
+                rewards[i] += 1*beta
             end
 
             # get reward for goal occupation
-            rewards[i] += sum(model.SS.GO[i,:])*10
-            rewards[i] += sum(model.SS.GO[i,:])*10*alpha
+            rewards[i] += sum(model.SS.GO[i,:])*1
+            rewards[i] += sum(model.SS.GO[i,:])*1*alpha
 
             # agents pay penalty for goals they don't know location of
-            rewards[i] += -1*sum(1 .- model.SS.GA[i, :])
+            rewards[i] += -0.1*sum(1 .- model.SS.GA[i, :])
 
         end
     end

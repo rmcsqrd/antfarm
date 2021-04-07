@@ -4,6 +4,7 @@ mutable struct SimulationParams
     num_agents::Int64          # number of agents in simulation
     num_goals::Int64           # number of goals
     num_steps::Int64           # number of steps per episode
+    num_vid_steps::Int64
     num_episodes::Int64        # number of episodes per simulation
     sim_vid_interval::Int64    # interval step to create output mp4
     sim_type::String           # simulation type for agent IC
@@ -15,7 +16,8 @@ end
 
 function model_run(;num_agents=20,
                     num_goals = 20,
-                    num_steps = 5000,     # number of steps per episode (epoch)
+                    num_steps = 10000,     # number of steps per episode (epoch)
+                    num_vid_steps = 1000,
                     num_episodes = 10000, # number of episodes (epochs)
                     sim_vid_interval = 100,
                     sim_type = "lost_hiker",
@@ -37,6 +39,7 @@ function model_run(;num_agents=20,
         sim_params = SimulationParams(num_agents,
                                   num_goals,
                                   num_steps,
+                                  num_vid_steps,
                                   num_episodes,
                                   sim_vid_interval,
                                   sim_type,
@@ -76,9 +79,11 @@ function model_run(;num_agents=20,
         run_time = @elapsed reward_hist[episode], loss_hist[episode] = episode_run!(model)
 
         # write output to console
+        pr(x) = round(x, digits=2)
         println("\nEpisode #$episode of $num_episodes")
-        println("Global Reward for Episode = $(reward_hist[episode])")
-        println("Time Elapsed for Episode = $run_time")
+        println("Global Reward for Episode = $(pr(reward_hist[episode]))")
+        println("Training Loss for Epoch   = $(pr(loss_hist[episode]))")
+        println("Time Elapsed for Episode  = $(pr(run_time))")
 
         # save weights
         bson(string(model_write_path, "_theta_episode$episode.bson"), 
@@ -105,21 +110,17 @@ function episode_run!(model)
     if model.sim_params.episode_number % model.sim_params.sim_vid_interval == 0
         @info "plotting simulation"
         plot_reward_window(model.sim_params)  # plot losses/rewards
-        run_model_plot!(model, agent_step!, model_step!, model.sim_params)  # plot sim_vid
-
+        run_model_plot!(model, agent_step!, model_step!)  # plot sim_vid
+        training_loss = 0
     else
         run_model!(model, agent_step!, model_step!)
-    end
 
-    # train model
-    training_loss = model.RL.policy_train!(model)
+        # train model
+        training_loss = model.RL.policy_train!(model)
 
-    # return losses
-    if model.sim_params.rl_type == "A3C"
-        return sum(model.RL.params.r_t), training_loss
-    elseif model.sim_params.rl_type == "DQN"
-        return sum(model.RL.params.r_t), training_loss
     end
+    return sum(model.RL.params.r_t), training_loss
+
 
 end 
 

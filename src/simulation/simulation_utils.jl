@@ -8,7 +8,7 @@ end
 """
 Run model and create output video
 """
-function run_model_plot!(model, agent_step!, model_step!, sim_params)
+function run_model_plot!(model, agent_step!, model_step!)
     # delete original file
     try
         rm(filepath)
@@ -16,14 +16,14 @@ function run_model_plot!(model, agent_step!, model_step!, sim_params)
     end
 
     # plot stuff
-    filepath = string(homedir(),"/Programming/antfarm/src/data_output/episode_$(sim_params.episode_number).mp4")
+    filepath = string(homedir(),"/Programming/antfarm/src/data_output/episode_$(model.sim_params.episode_number).mp4")
     InteractiveDynamics.abm_video(
         filepath,
         model,
         agent_step!,
         model_step!,
-        title = "FMP Simulation, Epoch #$(sim_params.episode_number)",
-        frames = model.num_steps+1,  # weird issue with model stepping was causing NaN
+        title = "FMP Simulation, Epoch #$(model.sim_params.episode_number)",
+        frames = model.sim_params.num_vid_steps+1,  # weird issue with model stepping was causing NaN
         framerate = 100,
         resolution = (600, 600),
         as = as_f(a) = 1200*1/minimum(a.SSdims)*a.radius,  ## this was defined empirically
