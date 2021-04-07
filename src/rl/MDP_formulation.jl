@@ -110,11 +110,11 @@ function GlobalReward(model)
             end
 
             # get reward for goal occupation
-            rewards[i] += sum(model.SS.GO[i,:]) 
-            rewards[i] += sum(model.SS.GO[i,:])*alpha
+            rewards[i] += sum(model.SS.GO[i,:])*10
+            rewards[i] += sum(model.SS.GO[i,:])*10*alpha
 
             # agents pay penalty for goals they don't know location of
-            rewards[i] += -0.1*sum(1 .- model.SS.GA[i, :])
+            rewards[i] += -1*sum(1 .- model.SS.GA[i, :])
 
         end
     end

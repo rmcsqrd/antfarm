@@ -24,6 +24,7 @@ import CairoMakie
 #include("simulation/model_init.jl")
 include("simulation/simulation_wrapper.jl")
 include("simulation/rl_model_init.jl")
+include("simulation/debug_model_init.jl")
 include("simulation/simulation_utils.jl")
 
 # include RL stuff

@@ -119,7 +119,7 @@ function agent_step!(agent, model)
     if !(0 ≤ px ≤ ex && 0 ≤ py ≤ ey)
         agent.vel = (0.0, 0.0)
     end
-    move_agent!(agent, model, model.dt)
+    #move_agent!(agent, model, model.dt)  #BONE
 end
 
 function model_step!(model)

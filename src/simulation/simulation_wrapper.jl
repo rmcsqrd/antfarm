@@ -21,7 +21,7 @@ function model_run(;num_agents=20,
                     sim_type = "lost_hiker",
                     rl_type = "DQN",
                     prev_run="none",
-                    num_dims="1D",
+                    num_dims="2D",
                   )
 
     # setup simulation parameters

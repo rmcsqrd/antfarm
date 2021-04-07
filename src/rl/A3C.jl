@@ -85,8 +85,6 @@ function A3C_policy_train!(model)
         # get state in proper shape, compute gradients, record loses, update
         s_t = model.RL.params.s_t[i, :, :]
         a_t = model.RL.params.a_t[i, :, :]
-        display(s_t)
-        display(a_t)
         #dθ .+= gradient(()->actor_loss_function(R, s_t, a_t), model.RL.params.θ)
         #dθ_v .+= gradient(()->critic_loss_function(R, s_t), model.RL.params.θ)
         dθ .+= gradient(model.RL.params.θ) do
@@ -110,7 +108,7 @@ function A3C_policy_train!(model)
     #display(model.RL.params.θ)
     println("Training Loss for Epoch = $training_loss")
     #display(dθ.grads)
-    display(dθ.params)
+    #display(dθ.params)
     #display(dθ_v.grads)
     
     return training_loss
