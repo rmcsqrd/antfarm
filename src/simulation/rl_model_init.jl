@@ -45,7 +45,8 @@ function SimpleTest(model)
             color = "#FF0000"
         end
         # seed agents with random positions initially
-        add_agent!(pos, model, vel, pos, color, :A, radius, model.space.extent, [], [])
+        add_agent!(pos, model, vel, pos, color, :A, radius, model.space.extent, [], [],
+                   pos, 3, pos)
 
     end
 
@@ -61,6 +62,7 @@ function SimpleTest(model)
         end
 
         # add targets normally
-        add_agent!(tau, model, vel, tau, color, :T, radius, model.space.extent, [], [])
+        add_agent!(tau, model, vel, tau, color, :T, radius, model.space.extent, [], [], 
+                   tau, 3, tau)
     end
 end

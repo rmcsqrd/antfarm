@@ -53,15 +53,7 @@ function model_run(;num_agents=20,
     end
 
     # specify global MDP formulation
-    if rl_type == "A3C"
-        @info "A3C Selected"
-        rl_arch = a3c_struct_init(sim_params)
-    elseif rl_type == "DQN"
-        @info "DQN Selected"
-        rl_arch = dqn_struct_init(sim_params)
-    else
-        @error "RL type unknown"
-    end
+    dqn_params, dqn_network = DQN_init(sim_params)
 
     # setup prelim stuff for data recording
     model_write_path = string(homedir(),"/Programming/antfarm/src/data_output/_model_weights/")
@@ -70,7 +62,7 @@ function model_run(;num_agents=20,
     end
     
     # define model once to preserve RL stuff between episodes
-    model = fmp_model_init(rl_arch, sim_params)
+    model = fmp_model_init(dqn_params, dqn_network, sim_params)
 
     # train model
     for episode in 1:sim_params.num_episodes  # BONE, find clever solution to this
@@ -87,7 +79,8 @@ function model_run(;num_agents=20,
 
         # save weights
         bson(string(model_write_path, "_theta_episode$episode.bson"), 
-             Dict(:Policy => model.RL.params,
+             Dict(:Policy => model.DQN,
+                  :model_params=>model.DQN_params,
                   :sim_params => sim_params,
                   :reward_hist => reward_hist,
                   :loss_hist => loss_hist,
@@ -96,11 +89,10 @@ function model_run(;num_agents=20,
         # reset agent based model
         fmp_model_reset!(model)
 
-        # reset RL parameters for next episode
-        model.RL.episode_init!(model)
-
-        # update episode number
+        # update episode number and clear reward/losses
         model.sim_params.episode_number = episode
+        model.DQN_params.ep_rew = 0
+        model.DQN_params.ep_loss = 0
     end
 end
 
@@ -111,16 +103,9 @@ function episode_run!(model)
         @info "plotting simulation"
         plot_reward_window(model)  # plot losses/rewards
         run_model_plot!(model, agent_step!, model_step!)  # plot sim_vid
-        training_loss = 0
     else
         run_model!(model, agent_step!, model_step!)
-
-        # train model
-        training_loss = model.RL.policy_train!(model)
-
     end
-    return sum(model.RL.params.r_t), training_loss
-
-
+    return model.DQN_params.ep_rew, model.DQN_params.ep_loss
 end 
 

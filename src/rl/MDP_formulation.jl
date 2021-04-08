@@ -6,14 +6,6 @@ mutable struct StateSpace
     GO::Array{Bool,2}
 end
 
-mutable struct RL_Wrapper
-    params  # container for specific RL architecture params
-    policy_train!  # function for training the RL architecture
-    policy_evaluate!  # function for evaluating the model state, returns an action
-    episode_init!  # function for initializing RL struct at beginning of episode
-    γ::Float64  # discount factor
-end
-
 function RL_Update!(model)
     # update global state (goal awareness/goal occupation)
     GlobalStateTransition!(model)
@@ -27,32 +19,52 @@ function RL_Update!(model)
         if model.agents[agent_id].type == :A
             i = model.Agents2RL[agent_id]
 
-            # first, determine agent i's knowledge of goal positions
-            GAi = model.SS.GA[i, :]
-
-            # next, compare GA with goal locations. Return true location if
-            # agent i is aware of goal location, (Inf, Inf) if not
-            goal_pos_i = [xi == 1 ? yi : (-1,-1) for xi in GAi, yi in goal_loc_array[1,:]]  
-            
-            # vectorize to create state. Need to use iterators because
-            # vec(Tuple) doesn't work
-            s_t = [collect(Iterators.flatten(model.agents[agent_id].pos));
-                   #collect(Iterators.flatten(goal_pos_i));  # BONE
-                   #vec(GAi)  # BONE
-                  ]
-            s_t = round.(s_t, digits = 3)  # round to limit state space
-          
-            # select action according to RL policy
+            # get model state from agent and  push transition into replay buffer
+            a_t1 = model.agents[agent_id].a_t1
+            s_t1, s_t = get_state(model, agent_id, i)
             r_t = rewards[i]
-            a_t = model.RL.policy_evaluate!(i, model.t, s_t, r_t, model)
 
-            # update model
-            model.agents[agent_id].tau = model.agents[agent_id].pos .+ model.action_dict[a_t]
+            if length(model.DQN_params.H) == model.DQN_params.N
+                popfirst!(model.DQN_params.H)
+            end
+            push!(model.DQN_params.H, (s_t1, a_t1, r_t, s_t))
 
+            # select action according to RL policy
+            a_t = DQN_policy_eval!(s_t, model)
+            model.agents[agent_id].a_t1 = a_t
+
+            # update agent with action
+            model.agents[agent_id].tau = model.agents[agent_id].pos .+ model.action_dict[a_t1]
+            # update episode reward
+            model.DQN_params.ep_rew += r_t
 
         end
     end
 
+end
+
+function get_state(model, agent_id, i)
+#            # BONE, probably going to remove the whole GA, GO stuff
+#            # first, determine agent i's knowledge of goal positions
+#            GAi = model.SS.GA[i, :]
+#
+#            # next, compare GA with goal locations. Return true location if
+#            # agent i is aware of goal location, (Inf, Inf) if not
+#            goal_pos_i = [xi == 1 ? yi : (-1,-1) for xi in GAi, yi in goal_loc_array[1,:]]  
+#            # vectorize to create state. Need to use iterators because
+#            # vec(Tuple) doesn't work
+#            s_ti = round.([collect(Iterators.flatten(model.agents[agent_id].s_t));
+#                   #collect(Iterators.flatten(goal_pos_i));  # BONE
+#                   #vec(GAi)  # BONE
+#                  ], digits=3)
+
+
+            s_t1 = collect(Iterators.flatten(model.agents[agent_id].s_t1))
+            s_t = collect(Iterators.flatten(model.agents[agent_id].s_t))
+
+            s_t1 = round.(s_t1, digits=3)
+            s_t = round.(s_t, digits=3)
+            return s_t1, s_t
 end
 
 function GlobalStateTransition!(model)

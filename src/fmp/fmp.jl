@@ -9,9 +9,12 @@ mutable struct FMP_Agent <: AbstractAgent
     SSdims::NTuple{2, Float64}  ## include this for plotting
     Ni::Vector{Int64} ## array of neighboring agent IDs
     Gi::Vector{Int64} ## array of neighboring goal IDs
+    s_t1
+    a_t1
+    s_t
 end
 
-function fmp_model_init(rl_arch, sim_params)
+function fmp_model_init(dqn_params, dqn_network, sim_params)
 
     # first define model properties/space/etc for ABM
     extents = (1,1)
@@ -45,8 +48,9 @@ function fmp_model_init(rl_arch, sim_params)
                       :Agents2RL=>Dict{Int64, Int64}(),  # dict to map Agents.jl agent_ids to RL formulation id values
                       :Goals=>Dict{Int64, Tuple{Float64, Float64}}(),  # dict to map RL formulation goal id's to position of Agents.jl goal (agent.type == :T)
                       :t=>1,  # current step
-                      :RL=>rl_arch,
                       :sim_params=>sim_params,
+                      :DQN=>dqn_network,
+                      :DQN_params=>dqn_params
                      )
 
     space2d = ContinuousSpace(extents; periodic = false)
@@ -78,7 +82,7 @@ function fmp_model_add_agents!(model)
     agent_idx = 1
     for agent_id in keys(model.agents)
 
-        # first, assign policy to agents
+        # first, assign MDP id to agent and initial stat
         if model.agents[agent_id].type == :A
             model.Agents2RL[agent_id] = agent_idx
             agent_idx += 1
@@ -110,6 +114,7 @@ end
 
 # define agent/model step stuff
 function agent_step!(agent, model)
+
     # check model extents to respect boundary
     px, py = agent.pos .+ model.step_inc*model.dt .* agent.vel
     ex, ey = model.space.extent
@@ -122,13 +127,24 @@ end
 function model_step!(model)
     # do FMP stuff - figure out interacting pairs and update velocities
     # accordingly
-    fmp_update_interacting_pairs(model)
-    for agent_id in keys(model.agents)
-        fmp_update_vel(model.agents[agent_id], model)
-    end
 
     # do RL stuff 
     RL_Update!(model)
+
+    fmp_update_interacting_pairs(model)
+    for agent_id in keys(model.agents)
+        fmp_update_vel(model.agents[agent_id], model)
+
+        # update agent states
+        model.agents[agent_id].s_t1 = model.agents[agent_id].s_t
+        model.agents[agent_id].s_t = model.agents[agent_id].pos
+
+    end
+
+    # train model if required
+    if model.DQN_params.K % model.t == 0
+        DQN_train!(model)
+    end
 
     # step forward
     model.t += 1
