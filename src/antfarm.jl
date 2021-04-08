@@ -8,6 +8,7 @@ using ProgressMeter: @showprogress
 using Random
 using Plots
 using LinearAlgebra
+using LaTeXStrings
 using Flux
 using Zygote
 using Zygote: Params, Grads, @showgrad, dropgrad

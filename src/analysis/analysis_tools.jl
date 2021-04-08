@@ -1,12 +1,12 @@
-function plot_reward_window(sim_params; n=100 )
+function plot_reward_window(model; n=100 )
     if isodd(n)
         n -= 1  # window midpoints don't like odd numbers
     end
-    r = BSON.load(string(homedir(),"/Programming/antfarm/src/data_output/_model_weights/_theta_episode$(sim_params.episode_number).bson"), @__MODULE__)
+    r = BSON.load(string(homedir(),"/Programming/antfarm/src/data_output/_model_weights/_theta_episode$(model.sim_params.episode_number).bson"), @__MODULE__)
     rew = r[:reward_hist]
-    rew = rew[1:sim_params.episode_number]  
+    rew = rew[1:model.sim_params.episode_number]  
     loss = r[:loss_hist]
-    loss = loss[1:sim_params.episode_number]  
+    loss = loss[1:model.sim_params.episode_number]  
 
     μ = zeros(length(rew))  # this makes indexing easier, we'll lop off zero values later
     σ = zeros(length(μ))
@@ -50,7 +50,7 @@ function plot_reward_window(sim_params; n=100 )
 #                color="#cb60d9")
 
     # plot loss stuff
-    title!("Reward Over Time; RL Algorithm = $(sim_params.rl_type)")
+    title!("Reward Over Time; RL Algorithm = $(model.sim_params.rl_type)")
     p2 = Plots.scatter(1:length(loss), loss,
                         label="Loss @ Epoch",
                         legend=:topleft,

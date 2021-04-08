@@ -40,7 +40,7 @@ function RL_Update!(model)
                    #collect(Iterators.flatten(goal_pos_i));  # BONE
                    #vec(GAi)  # BONE
                   ]
-            s_t = round.(s_t, digits = 2)  # round to limit state space
+            s_t = round.(s_t, digits = 3)  # round to limit state space
           
             # select action according to RL policy
             r_t = rewards[i]
@@ -106,12 +106,12 @@ function GlobalReward(model)
                 j = model.Agents2RL[neighbor_id]
                 info_exchange = xor.(model.SS.GA[i, :], model.SS.GA[j, :])
                 beta = sum(info_exchange)/model.num_goals
-                rewards[i] += 1*beta
+                #rewards[i] += 1*beta
             end
 
             # get reward for goal occupation
-            rewards[i] += sum(model.SS.GO[i,:])*1
-            rewards[i] += sum(model.SS.GO[i,:])*1*alpha
+            rewards[i] += sum(model.SS.GO[i,:])*0.1
+            #rewards[i] += sum(model.SS.GO[i,:])*1*alpha
 
             # agents pay penalty for goals they don't know location of
             rewards[i] += -0.1*sum(1 .- model.SS.GA[i, :])

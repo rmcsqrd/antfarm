@@ -2,7 +2,7 @@ mutable struct DQN_Global
     Q     # action-value function
     θ     # action-value params
     Q̂     # target action-value function
-    θ⁻    # target action-value params
+    Q̂_max
     opt   # optimiser
     ϵ     # ϵ-greedy parameter
     replay_size::Int64
@@ -20,6 +20,7 @@ function DQN_policy_train!(model)
         e = []
         for j in 1:model.num_steps-1 
             s_j = model.RL.params.s_t[i, :, j]
+            #display(s_j)
             s_j1 = model.RL.params.s_t[i, :, j+1]
             r_j = model.RL.params.r_t[i, j]
             a_j = model.RL.params.a_t[i, j]
@@ -74,10 +75,14 @@ function DQN_policy_train!(model)
 #                model.RL.params.Q̂ = deepcopy(model.RL.params.Q)
 #                model.RL.params.θ⁻ = deepcopy(model.RL.params.θ)
 #            end
-            if model.RL.params.episode_number % model.RL.params.C == 0
-                model.RL.params.Q̂ = deepcopy(model.RL.params.Q)
-                model.RL.params.θ⁻ = deepcopy(model.RL.params.θ)
-            end
+        end
+
+        mini_batch_reward = sum(model.RL.params.r_t)
+        if model.sim_params.episode_number % model.RL.params.C == 0
+        #if mini_batch_reward > model.RL.params.Q̂_max #|| model.sim_params.episode_number % model.RL.params.C == 0
+            @info "Updating Q̂"
+            model.RL.params.Q̂ = deepcopy(model.RL.params.Q)
+            model.RL.params.Q̂_max = mini_batch_reward
         end
 #        println("\nQ(s,a) for goal state:")
         display(model.RL.params.Q([0.2;0.5]))
@@ -136,8 +141,8 @@ function dqn_struct_init(sim_params)
     end
     if sim_params.prev_run == "none"
         model = Chain(
-                      Dense(state_dim, 32, relu),
-                      Dense(32, action_dim)
+                      Dense(state_dim, 16, relu),
+                      Dense(16, action_dim)
                      )
     else
         # load in previous model
@@ -145,18 +150,18 @@ function dqn_struct_init(sim_params)
         model = prev_model[:Policy].model
     end
     θ = params(model)
-    θ⁻ = deepcopy(θ)
+    Q̂_max = -Inf
     γ = 0.99
-    η = 0.001
+    η = 0.0005
     ϵ_factor = 1000
     ϵ(i) = maximum((0.1, (ϵ_factor-i)/ϵ_factor))
     replay_size = 24
-    C = 0.1*replay_size
-    opt = Flux.Optimise.Optimiser(ClipValue(1), ADAM(η))
+    C = 10
+    opt = Flux.Optimise.Optimiser(ClipValue(1), RMSProp(η))
     r_matrix = zeros(Float32, sim_params.num_agents, sim_params.num_steps)
     s_matrix = zeros(Float32, sim_params.num_agents, state_dim, sim_params.num_steps)
     action_matrix = zeros(Float32, sim_params.num_agents, sim_params.num_steps)
-    DQN_params = DQN_Global(model, θ, deepcopy(model), θ⁻, opt, ϵ, replay_size, C, r_matrix, s_matrix, action_matrix)
+    DQN_params = DQN_Global(model, θ, deepcopy(model), Q̂_max, opt, ϵ, replay_size, C, r_matrix, s_matrix, action_matrix)
 
     return RL_Wrapper(DQN_params, DQN_policy_train!, DQN_policy_eval!, DQN_episode_init!, γ)
 

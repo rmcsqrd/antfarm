@@ -109,7 +109,7 @@ function episode_run!(model)
     # record simulation or just run normally
     if model.sim_params.episode_number % model.sim_params.sim_vid_interval == 0
         @info "plotting simulation"
-        plot_reward_window(model.sim_params)  # plot losses/rewards
+        plot_reward_window(model)  # plot losses/rewards
         run_model_plot!(model, agent_step!, model_step!)  # plot sim_vid
         training_loss = 0
     else
