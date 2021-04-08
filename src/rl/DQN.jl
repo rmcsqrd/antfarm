@@ -85,7 +85,7 @@ function DQN_policy_train!(model)
             model.RL.params.Q̂_max = mini_batch_reward
         end
 #        println("\nQ(s,a) for goal state:")
-        display(model.RL.params.Q([0.2;0.5]))
+        #display(model.RL.params.Q([0.2;0.5]))
 #        avgx = sum(model.RL.params.s_t[i, 1, :])/model.t
 #        avgy = sum(model.RL.params.s_t[i, 2, :])/model.t
 #        println("Average state = ($avgx, $avgy)") 
@@ -120,7 +120,7 @@ function DQN_policy_eval!(i, t, s_t, r_t, model)
 end
 
 function DQN_episode_init!(model)
-    state_dim = 2#+model.num_goals*2 + model.num_goals  #BONE
+    state_dim = 2+model.num_goals*2 + model.num_goals
     action_dim = length(keys(model.action_dict))
 
     model.RL.params.r_t = zeros(Float32, model.num_agents, model.num_steps)
@@ -130,7 +130,7 @@ function DQN_episode_init!(model)
 end
 
 function dqn_struct_init(sim_params)
-    state_dim = 2#+sim_params.num_goals*2 + sim_params.num_goals  #BONE
+    state_dim = 2+sim_params.num_goals*2 + sim_params.num_goals
     action_dim = 0
     if sim_params.num_dimensions == "1D"
         action_dim = 3

@@ -37,8 +37,8 @@ function RL_Update!(model)
             # vectorize to create state. Need to use iterators because
             # vec(Tuple) doesn't work
             s_t = [collect(Iterators.flatten(model.agents[agent_id].pos));
-                   #collect(Iterators.flatten(goal_pos_i));  # BONE
-                   #vec(GAi)  # BONE
+                   collect(Iterators.flatten(goal_pos_i));  # BONE
+                   vec(GAi)  # BONE
                   ]
             s_t = round.(s_t, digits = 3)  # round to limit state space
           
@@ -48,6 +48,7 @@ function RL_Update!(model)
 
             # update model
             model.agents[agent_id].tau = model.agents[agent_id].pos .+ model.action_dict[a_t]
+
 
         end
     end
@@ -65,6 +66,12 @@ function GlobalStateTransition!(model)
                 g = model.Agents2RL[goal_id]
                 model.SS.GA[i,g] = 1
                 model.SS.GO[i,g] = 1
+            end
+
+            if length(model.agents[agent_id].Gi) > 0
+                model.agents[agent_id].color = "#3CB371"
+            else
+                model.agents[agent_id].color = "#FF0000"
             end
         end
     end
