@@ -24,10 +24,12 @@ function RL_Update!(model)
             s_t1, s_t = get_state(model, agent_id, i)
             r_t = rewards[i]
 
-            if length(model.DQN_params.H) == model.DQN_params.N
-                popfirst!(model.DQN_params.H)
+            if length(model.buffer.H) == model.DQN_params.N
+                popfirst!(model.buffer.H)
+                popfirst!(model.buffer.p)
             end
-            push!(model.DQN_params.H, (s_t1, a_t1, r_t, s_t))
+            push!(model.buffer.H, (s_t1, a_t1, r_t, s_t))
+            push!(model.buffer.p, model.buffer.max_p)
 
             # select action according to RL policy
             a_t = DQN_policy_eval!(s_t, model)

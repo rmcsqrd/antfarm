@@ -53,7 +53,7 @@ function model_run(;num_agents=20,
     end
 
     # specify global MDP formulation
-    dqn_params, dqn_network = DQN_init(sim_params)
+    dqn_params, dqn_network, buffer = DQN_init(sim_params)
 
     # setup prelim stuff for data recording
     model_write_path = string(homedir(),"/Programming/antfarm/src/data_output/_model_weights/")
@@ -62,7 +62,7 @@ function model_run(;num_agents=20,
     end
     
     # define model once to preserve RL stuff between episodes
-    model = fmp_model_init(dqn_params, dqn_network, sim_params)
+    model = fmp_model_init(dqn_params, dqn_network, buffer, sim_params)
 
     # train model
     for episode in 1:sim_params.num_episodes  # BONE, find clever solution to this
@@ -80,7 +80,8 @@ function model_run(;num_agents=20,
         # save weights
         bson(string(model_write_path, "_theta_episode$episode.bson"), 
              Dict(:Policy => model.DQN,
-                  :model_params=>model.DQN_params,
+                  #:model_params=>model.DQN_params,  # saving the replay buffer
+                  #was taking a long time
                   :sim_params => sim_params,
                   :reward_hist => reward_hist,
                   :loss_hist => loss_hist,

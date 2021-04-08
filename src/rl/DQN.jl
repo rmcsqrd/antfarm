@@ -1,7 +1,6 @@
 mutable struct DQN_HyperParams
     α   # prioritization factor
     β   # weight factor
-    H   # replay buffer
     K   # replay period
     k   # minibatch size
     N   # replay buffer max size
@@ -10,6 +9,13 @@ mutable struct DQN_HyperParams
     γ   # MDP discount factor
     ep_rew  # episode reward
     ep_loss  # episode loss
+end
+
+mutable struct ReplayBuffer
+    H   # replay buffer
+    p   # probability samples
+    max_w  # max computed weight so far
+    max_p  # max computed probability so far
 end
 
 mutable struct DQN_Network
@@ -24,24 +30,50 @@ end
 function DQN_train!(model)
     
     training_loss = 0
-    for i in 1:model.num_agents
+    for _ in 1:model.num_agents
 
-        # get minibatch data of size k from buffer (H) 
-        data = rand(model.DQN_params.H, model.DQN_params.k)
-        
-        function DQN_loss(data)
-            cumulative_loss = 0
-            n = length(data)
-            for (st, at, rt, st1) in data
-                y = rt + model.DQN_params.γ*maximum(model.DQN.Q̂(st1))
-                cumulative_loss += (y - model.DQN.Q(st)[at])^2
-            end
-            return cumulative_loss/n
+        function DQN_loss(st, at, rt, st1)
+            y = rt + model.DQN_params.γ*maximum(model.DQN.Q̂(st1))
+            loss =  y - model.DQN.Q(st)[at]
+            return loss
         end
-                
-        dθ = gradient(model.DQN.θ) do
-            loss = DQN_loss(data)
-            training_loss += loss
+
+
+        # get minibatch data of size k from buffer (H) and update grads
+        dθ = Zygote.Grads(IdDict(ps => nothing for ps in model.DQN.θ), model.DQN.θ)
+        for _ in 1:model.DQN_params.k
+
+            # sample according to bias and compute weight
+            N = length(model.buffer.H)
+
+            probs = ProbabilityWeights((model.buffer.p .^ model.DQN_params.α)/sum(model.buffer.p .^ model.DQN_params.α))
+            j = sample(1:N, probs)
+
+            # compute weight and scale
+            wj = (1/N*1/probs[j])^model.DQN_params.β(model.sim_params.episode_number)
+            if model.buffer.max_w != 0
+                wj = wj/model.buffer.max_w
+            end
+
+            # overwrite weight max if required
+            if wj > model.buffer.max_w
+                model.buffer.max_w = wj
+            end
+
+            # accumulate gradient
+            pj = 0
+            dθ .+= gradient(model.DQN.θ) do
+                δj = DQN_loss(model.buffer.H[j]...)
+                pj = abs(δj)
+                training_loss += abs(δj)
+                return δj*wj
+            end
+            probs[j] = pj
+
+            # overwrite probability max if required
+            if pj > model.buffer.max_p
+                model.buffer.max_p = pj
+            end
         end
         update!(model.DQN.opt, model.DQN.θ, dθ)
 
@@ -90,8 +122,11 @@ function DQN_init(sim_params)
     θ = params(Q)
     Q̂ = deepcopy(Q)
     θ⁻ = params(Q̂)
-    η = 0.00025  
-    opt = Flux.Optimise.Optimiser(ClipValue(1), RMSProp(η))
+    η = 0.00025 
+    # note, 0.00025 and hidden layer dim = 16 work for RMSProp
+    #η = 0.00025
+    #opt = Flux.Optimise.Optimiser(ClipValue(1), ADAM(η))
+    opt = RMSProp(η)
 
 ## HYPER PARAMS
 #    α   # prioritization factor
@@ -106,22 +141,23 @@ function DQN_init(sim_params)
 #    ep_rew  # episode reward
 #    ep_loss  # episode loss
 #
-    α = 1
-    β = 0.4
+    α = 0.6
+    β_factor = 1000
+    β_min = 0.4
+    β(i) = minimum((maximum((β_min, i/β_factor)),1))
     K = 1000
-    k = 24
-    N = 1000
+    k = 32
+    N = 10000
     γ = 0.99
-    # note, 0.00025 and hidden layer dim = 16 work
     ϵ_factor = 1000
     ϵ(i) = maximum((0.1, (ϵ_factor-i)/ϵ_factor))
-    replay_size = 24
     τ = 0.0001
     γ = 0.99
 
-    DQN_params = DQN_HyperParams(α, β, [], K, k, N, τ, ϵ, γ, 0, 0)
+    DQN_params = DQN_HyperParams(α, β, K, k, N, τ, ϵ, γ, 0, 0)
     DQN_network = DQN_Network(Q, θ, Q̂, θ⁻, opt)
+    replay_buffer = ReplayBuffer([], [], 0, 1)
 
-    return DQN_params, DQN_network
+    return DQN_params, DQN_network, replay_buffer
 
 end

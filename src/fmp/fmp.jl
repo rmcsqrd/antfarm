@@ -14,7 +14,7 @@ mutable struct FMP_Agent <: AbstractAgent
     s_t
 end
 
-function fmp_model_init(dqn_params, dqn_network, sim_params)
+function fmp_model_init(dqn_params, dqn_network, buffer, sim_params)
 
     # first define model properties/space/etc for ABM
     extents = (1,1)
@@ -50,7 +50,8 @@ function fmp_model_init(dqn_params, dqn_network, sim_params)
                       :t=>1,  # current step
                       :sim_params=>sim_params,
                       :DQN=>dqn_network,
-                      :DQN_params=>dqn_params
+                      :DQN_params=>dqn_params,
+                      :buffer=>buffer
                      )
 
     space2d = ContinuousSpace(extents; periodic = false)
@@ -125,12 +126,12 @@ function agent_step!(agent, model)
 end
 
 function model_step!(model)
-    # do FMP stuff - figure out interacting pairs and update velocities
-    # accordingly
 
     # do RL stuff 
     RL_Update!(model)
 
+    # do FMP stuff - figure out interacting pairs and update velocities
+    # accordingly
     fmp_update_interacting_pairs(model)
     for agent_id in keys(model.agents)
         fmp_update_vel(model.agents[agent_id], model)
@@ -142,7 +143,7 @@ function model_step!(model)
     end
 
     # train model if required
-    if model.DQN_params.K % model.t == 0
+    if model.t % model.DQN_params.K == 0
         DQN_train!(model)
     end
 
