@@ -152,7 +152,7 @@ function dqn_struct_init(sim_params)
     θ = params(model)
     Q̂_max = -Inf
     γ = 0.99
-    η = 0.0005
+    η = 0.00025
     ϵ_factor = 1000
     ϵ(i) = maximum((0.1, (ϵ_factor-i)/ϵ_factor))
     replay_size = 24
