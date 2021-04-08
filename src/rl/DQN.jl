@@ -2,7 +2,8 @@ mutable struct DQN_Global
     Q     # action-value function
     θ     # action-value params
     Q̂     # target action-value function
-    Q̂_max
+    θ⁻
+    τ
     opt   # optimiser
     ϵ     # ϵ-greedy parameter
     replay_size::Int64
@@ -20,7 +21,6 @@ function DQN_policy_train!(model)
         e = []
         for j in 1:model.num_steps-1 
             s_j = model.RL.params.s_t[i, :, j]
-            #display(s_j)
             s_j1 = model.RL.params.s_t[i, :, j+1]
             r_j = model.RL.params.r_t[i, j]
             a_j = model.RL.params.a_t[i, j]
@@ -29,67 +29,52 @@ function DQN_policy_train!(model)
 
         data = rand(e, model.RL.params.replay_size)
 
-##        function DQN_loss(st, at, rt, st1)
-##            display(st1)
-##            sleep(100)
-##            n = length(st1)
-##            Qs = model.RL.params.Q(st)
-##            Qsa = [Qs[ai, i] for (i, ai) in enumerate(at)]
-##            
-##            Q̂s = model.RL.params.Q̂(st1)
-##            Q̂s_max = maximum(Q̂s, dims=1)
-##            y = rt .- model.RL.γ*Q̂s_max
-##            return sum((y .- Q̂sa) .^2)/n
-##
-##        end
-##
-##        t = DQN_loss(data...)
-##
-##        dθ = gradient(model.RL.params.θ) do
-##            loss = DQN_loss(data...)
-##            training_loss += loss
-##            return lss
-##        end
-##        update!(model.RL.params.opt, model.RL.params.θ, dθ)
-##
-##        if model.sim_params.episode_number % model.RL.params.C == 0
-##            model.RL.params.Q̂ = deepcopy(model.RL.params.Q)
-##            model.RL.params.θ⁻ = deepcopy(model.RL.params.θ)
-##        end
-    
-        function DQN_loss(st, at, rt, st1)
-            y = rt + model.RL.γ*maximum(model.RL.params.Q̂(st1))
-            return (y - model.RL.params.Q(st)[at])^2
-        end
-
-        for (cnt, d) in enumerate(data)
-            dθ = gradient(model.RL.params.θ) do
-                loss = DQN_loss(d...)
-                training_loss += loss
-                return loss
+        function DQN_loss(data)
+            cumulative_loss = 0
+            n = length(data)
+            for (st, at, rt, st1) in data
+                y = rt + model.RL.γ*maximum(model.RL.params.Q̂(st1))
+                cumulative_loss += (y - model.RL.params.Q(st)[at])^2
             end
-            update!(model.RL.params.opt, model.RL.params.θ, dθ)
+            return cumulative_loss/n
+        end
+                
 
-            # update target network
-#            if cnt % model.RL.params.C == 0
-#                model.RL.params.Q̂ = deepcopy(model.RL.params.Q)
-#                model.RL.params.θ⁻ = deepcopy(model.RL.params.θ)
+        dθ = gradient(model.RL.params.θ) do
+            loss = DQN_loss(data)
+            training_loss += loss
+        end
+        update!(model.RL.params.opt, model.RL.params.θ, dθ)
+    
+#        function DQN_loss(st, at, rt, st1)
+#            y = rt + model.RL.γ*maximum(model.RL.params.Q̂(st1))
+#            return (y - model.RL.params.Q(st)[at])^2
+#        end
+#
+#        for (cnt, d) in enumerate(data)
+#            dθ = gradient(model.RL.params.θ) do
+#                loss = DQN_loss(d...)
+#                training_loss += loss
+#                return loss
 #            end
+#            update!(model.RL.params.opt, model.RL.params.θ, dθ)
+#
+#        end
+
+        # do soft update of target network
+        for i in 1:length(model.RL.params.θ⁻)
+            model.RL.params.θ⁻[i] .= model.RL.params.θ[i]*model.RL.params.τ + model.RL.params.θ⁻[i]*(1-model.RL.params.τ)
         end
 
-        mini_batch_reward = sum(model.RL.params.r_t)
-        if model.sim_params.episode_number % model.RL.params.C == 0
-        #if mini_batch_reward > model.RL.params.Q̂_max #|| model.sim_params.episode_number % model.RL.params.C == 0
-            @info "Updating Q̂"
-            model.RL.params.Q̂ = deepcopy(model.RL.params.Q)
-            model.RL.params.Q̂_max = mini_batch_reward
-        end
-#        println("\nQ(s,a) for goal state:")
-        #display(model.RL.params.Q([0.2;0.5]))
-#        avgx = sum(model.RL.params.s_t[i, 1, :])/model.t
-#        avgy = sum(model.RL.params.s_t[i, 2, :])/model.t
-#        println("Average state = ($avgx, $avgy)") 
-        #display(model.RL.params.θ) 
+#        x = [0.2; 0.5; 0.2; 0.5; 1]
+#        display(model.RL.params.Q(x))
+#        display(model.RL.params.Q̂(x))
+
+#        if model.sim_params.episode_number % model.RL.params.C == 0
+#            @info "Updating Q̂"
+#            model.RL.params.Q̂ = deepcopy(model.RL.params.Q)
+#            model.RL.params.Q̂_max = mini_batch_reward
+#        end
     end
 
     #display(dθ.params)
@@ -101,11 +86,6 @@ end
 function DQN_policy_eval!(i, t, s_t, r_t, model)
     # select action via ϵ-greedy
     if rand() < model.RL.params.ϵ(model.sim_params.episode_number)
-#        if rand() < 0.5
-#            action =  3
-#        else
-#            action = rand(1:length(keys(model.action_dict)))
-#        end
          action = rand(1:length(keys(model.action_dict)))
     else
         action = argmax(model.RL.params.Q(s_t))
@@ -140,28 +120,31 @@ function dqn_struct_init(sim_params)
         @error "Wrong number of dimensions"
     end
     if sim_params.prev_run == "none"
-        model = Chain(
+        Q = Chain(
                       Dense(state_dim, 16, relu),
                       Dense(16, action_dim)
                      )
     else
         # load in previous model
         prev_model = BSON.load(sim_params.prev_run, @__MODULE__)
-        model = prev_model[:Policy].model
+        Q = prev_model[:Policy].model
     end
-    θ = params(model)
-    Q̂_max = -Inf
+    θ = params(Q)
+    Q̂ = deepcopy(Q)
+    θ⁻ = params(Q̂)
     γ = 0.99
-    η = 0.00025
+    # note, 0.00025 and hidden layer dim = 16 work
+    η = 0.00025  
     ϵ_factor = 1000
     ϵ(i) = maximum((0.1, (ϵ_factor-i)/ϵ_factor))
     replay_size = 24
     C = 10
+    τ = 0.0001
     opt = Flux.Optimise.Optimiser(ClipValue(1), RMSProp(η))
     r_matrix = zeros(Float32, sim_params.num_agents, sim_params.num_steps)
     s_matrix = zeros(Float32, sim_params.num_agents, state_dim, sim_params.num_steps)
     action_matrix = zeros(Float32, sim_params.num_agents, sim_params.num_steps)
-    DQN_params = DQN_Global(model, θ, deepcopy(model), Q̂_max, opt, ϵ, replay_size, C, r_matrix, s_matrix, action_matrix)
+    DQN_params = DQN_Global(Q, θ, Q̂, θ⁻, τ, opt, ϵ, replay_size, C, r_matrix, s_matrix, action_matrix)
 
     return RL_Wrapper(DQN_params, DQN_policy_train!, DQN_policy_eval!, DQN_episode_init!, γ)
 
