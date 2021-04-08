@@ -79,7 +79,7 @@ function model_run(;num_agents=20,
         run_time = @elapsed reward_hist[episode], loss_hist[episode] = episode_run!(model)
 
         # write output to console
-        pr(x) = round(x, digits=2)
+        pr(x) = round(x, digits=5)
         println("\nEpisode #$episode of $num_episodes")
         println("Global Reward for Episode = $(pr(reward_hist[episode]))")
         println("Training Loss for Epoch   = $(pr(loss_hist[episode]))")

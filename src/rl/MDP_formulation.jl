@@ -37,8 +37,8 @@ function RL_Update!(model)
             # vectorize to create state. Need to use iterators because
             # vec(Tuple) doesn't work
             s_t = [collect(Iterators.flatten(model.agents[agent_id].pos));
-                   collect(Iterators.flatten(goal_pos_i));  # BONE
-                   vec(GAi)  # BONE
+                   #collect(Iterators.flatten(goal_pos_i));  # BONE
+                   #vec(GAi)  # BONE
                   ]
             s_t = round.(s_t, digits = 3)  # round to limit state space
           

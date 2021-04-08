@@ -100,7 +100,7 @@ function DQN_policy_eval!(i, t, s_t, r_t, model)
 end
 
 function DQN_episode_init!(model)
-    state_dim = 2+model.num_goals*2 + model.num_goals
+    state_dim = 2#+model.num_goals*2 + model.num_goals
     action_dim = length(keys(model.action_dict))
 
     model.RL.params.r_t = zeros(Float32, model.num_agents, model.num_steps)
@@ -110,7 +110,7 @@ function DQN_episode_init!(model)
 end
 
 function dqn_struct_init(sim_params)
-    state_dim = 2+sim_params.num_goals*2 + sim_params.num_goals
+    state_dim = 2#+sim_params.num_goals*2 + sim_params.num_goals
     action_dim = 0
     if sim_params.num_dimensions == "1D"
         action_dim = 3
