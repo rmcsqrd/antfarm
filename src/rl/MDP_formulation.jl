@@ -26,10 +26,10 @@ function RL_Update!(model)
 
             if length(model.buffer.H) == model.DQN_params.N
                 popfirst!(model.buffer.H)
-                popfirst!(model.buffer.p)
+#                popfirst!(model.buffer.p)
             end
             push!(model.buffer.H, (s_t1, a_t1, r_t, s_t))
-            push!(model.buffer.p, model.buffer.max_p)
+#            push!(model.buffer.p, model.buffer.max_p)
 
             # select action according to RL policy
             a_t = DQN_policy_eval!(s_t, model)

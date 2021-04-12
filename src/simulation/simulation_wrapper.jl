@@ -94,6 +94,11 @@ function model_run(;num_agents=20,
         model.sim_params.episode_number = episode
         model.DQN_params.ep_rew = 0
         model.DQN_params.ep_loss = 0
+
+        if model.sim_params.episode_number % 100 == 0
+            model.DQN.Q̂ = model.DQN.Q
+        end
+
     end
 end
 
