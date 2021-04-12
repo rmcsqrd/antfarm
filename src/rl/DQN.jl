@@ -103,7 +103,6 @@ function DQN_init(sim_params)
     #opt = Flux.Optimise.Optimiser(ClipValue(1), RMSProp(η))
     opt = Flux.Optimise.Optimiser(ClipValue(10), RMSProp(η))
     #opt = RMSProp(η)
-    #opt = RMSProp(η)
 
 ## HYPER PARAMS
 #    K   # replay period
