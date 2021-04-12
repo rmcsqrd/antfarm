@@ -149,5 +149,9 @@ function model_step!(model)
 
     # step forward
     model.t += 1
+    model.sim_params.total_steps += 1
+
+    # check for model freeze
+    DQN_update_check!(model)
     
 end

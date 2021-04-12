@@ -10,6 +10,7 @@ mutable struct SimulationParams
     sim_type::String           # simulation type for agent IC
     rl_type::String            # RL algorithm to train with 
     episode_number::Int64      # current episode/epoch number
+    total_steps::Int64         # total number of model steps
     prev_run::String           # previous run indicator string (load in previous?)
     num_dimensions::String     # 1D vs 2D
 end
@@ -45,6 +46,7 @@ function model_run(;num_agents=20,
                                   sim_type,
                                   rl_type,
                                   1,
+                                  0,
                                   prev_run,
                                   num_dims,
                                  )
@@ -94,10 +96,6 @@ function model_run(;num_agents=20,
         model.sim_params.episode_number = episode
         model.DQN_params.ep_rew = 0
         model.DQN_params.ep_loss = 0
-
-        if model.sim_params.episode_number % 100 == 0
-            model.DQN.Q̂ = model.DQN.Q
-        end
 
     end
 end

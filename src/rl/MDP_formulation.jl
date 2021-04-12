@@ -24,12 +24,7 @@ function RL_Update!(model)
             s_t1, s_t = get_state(model, agent_id, i)
             r_t = rewards[i]
 
-            if length(model.buffer.H) == model.DQN_params.N
-                popfirst!(model.buffer.H)
-#                popfirst!(model.buffer.p)
-            end
-            push!(model.buffer.H, (s_t1, a_t1, r_t, s_t))
-#            push!(model.buffer.p, model.buffer.max_p)
+            DQN_buffer_update!(s_t1, a_t1, r_t, s_t, model)
 
             # select action according to RL policy
             a_t = DQN_policy_eval!(s_t, model)
@@ -132,7 +127,7 @@ function GlobalReward(model)
             end
 
             # get reward for goal occupation
-            rewards[i] += sum(model.SS.GO[i,:])*0.1
+            rewards[i] += sum(model.SS.GO[i,:])*0.5
             #rewards[i] += sum(model.SS.GO[i,:])*1*alpha
 
             # agents pay penalty for goals they don't know location of

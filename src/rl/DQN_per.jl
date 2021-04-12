@@ -125,6 +125,16 @@ function DQN_train!(model)
     model.DQN_params.ep_loss += training_loss
 end
 
+function DQN_buffer_update!(s_t1, a_t1, r_t, s_t, model)
+
+            if length(model.buffer.H) == model.DQN_params.N
+                popfirst!(model.buffer.H)
+                popfirst!(model.buffer.p)
+            end
+            push!(model.buffer.H, (s_t1, a_t1, r_t, s_t))
+            push!(model.buffer.p, model.buffer.max_p)
+end
+
 function DQN_policy_eval!(s_t, model)
     # select action via ϵ-greedy
     if rand() < model.DQN_params.ϵ(model.sim_params.episode_number)
@@ -133,6 +143,14 @@ function DQN_policy_eval!(s_t, model)
         action = argmax(model.DQN.Q(s_t))
     end
     return action
+end
+
+function DQN_update_check!(model)
+
+    # save model
+    if model.sim_params.total_steps % model.DQN_params.C == 0
+        model.DQN.Q̂ = model.DQN.Q
+    end
 end
 
 function DQN_init(sim_params)

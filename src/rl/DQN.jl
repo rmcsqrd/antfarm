@@ -5,6 +5,7 @@ mutable struct DQN_HyperParams
     τ   # soft update weight
     ϵ   # ϵ-greedy parameter
     γ   # MDP discount factor
+    C   # DQN model freeze interval
     ep_rew  # episode reward
     ep_loss  # episode loss
 end
@@ -15,9 +16,7 @@ end
 
 mutable struct DQN_Network
     Q     # action-value function
-    θ     # action-value network params
     Q̂     # target action-value function
-    θ⁻    # target action-value network params
     opt   # optimiser
 end
 
@@ -35,31 +34,39 @@ function DQN_train!(model)
     for _ in 1:model.num_agents
 
         # get minibatch data of size k from buffer (H) and update grads
-        dθ = Zygote.Grads(IdDict(ps => nothing for ps in model.DQN.θ), model.DQN.θ)
+        dθ = Zygote.Grads(IdDict(ps => nothing for ps in params(model.DQN.Q)), params(model.DQN.Q))
 
         data = rand(model.buffer.H, model.DQN_params.k)
         for d in data
 
             # compute gradient
             loss_j = 0
-            dθ .+= gradient(model.DQN.θ) do
+            dθ .+= gradient(params(model.DQN.Q)) do
                 loss_j = DQN_loss(d...)
                 return loss_j
             end
             training_loss += loss_j
         end
-        update!(model.DQN.opt, model.DQN.θ, dθ)
-
-    
-       # do soft update of target network
 
         x = [0.2;0.5]
-#        for i in 1:length(model.DQN.θ⁻)
-#            model.DQN.θ⁻[i] .= model.DQN.θ[i]*model.DQN_params.τ + model.DQN.θ⁻[i]*(1-model.DQN_params.τ)
+        update!(model.DQN.opt, params(model.DQN.Q), dθ)
+
+    
+#       # do soft update of target network
+#       for i in 1:length(params(model.DQN.Q̂))
+#           params(model.DQN.Q̂)[i] .= params(model.DQN.Q)[i]*model.DQN_params.τ + params(model.DQN.Q̂)[i]*(1-model.DQN_params.τ)
 #        end
     end
 
     model.DQN_params.ep_loss += training_loss
+end
+
+function DQN_update_check!(model)
+
+    # save model
+    if model.sim_params.total_steps % model.DQN_params.C == 0
+        model.DQN.Q̂ = model.DQN.Q
+    end
 end
 
 function DQN_policy_eval!(s_t, model)
@@ -70,6 +77,15 @@ function DQN_policy_eval!(s_t, model)
         action = argmax(model.DQN.Q(s_t))
     end
     return action
+end
+
+function DQN_buffer_update!(s_t1, a_t1, r_t, s_t, model)
+            if length(model.buffer.H) == model.DQN_params.N
+                popfirst!(model.buffer.H)
+#                popfirst!(model.buffer.p)
+            end
+            push!(model.buffer.H, (s_t1, a_t1, r_t, s_t))
+#            push!(model.buffer.p, model.buffer.max_p)
 end
 
 function DQN_init(sim_params)
@@ -87,14 +103,12 @@ function DQN_init(sim_params)
                   Dense(state_dim, 16, relu),
                   Dense(16, action_dim)
                  )
-    θ = params(Q)
     Q̂ = deepcopy(Q)
-    θ⁻ = params(Q̂)
     η = 0.00025 
     # note, 0.00025 and hidden layer dim = 16 work for RMSProp
     #η = 0.00025
     #opt = Flux.Optimise.Optimiser(ClipValue(1), ADAM(η))
-    opt = Flux.Optimise.Optimiser(ClipValue(1), RMSProp(η))
+    opt = Flux.Optimise.Optimiser(ClipValue(10), RMSProp(η))
     #opt = RMSProp(η)
 
 ## HYPER PARAMS
@@ -115,9 +129,10 @@ function DQN_init(sim_params)
     ϵ(i) = maximum((0.1, (ϵ_factor-i)/ϵ_factor))
     τ = 0.0001
     γ = 0.99
+    C = 10_000
 
-    DQN_params = DQN_HyperParams(K, k, N, τ, ϵ, γ, 0, 0)
-    DQN_network = DQN_Network(Q, θ, Q̂, θ⁻, opt)
+    DQN_params = DQN_HyperParams(K, k, N, τ, ϵ, γ, C, 0, 0)
+    DQN_network = DQN_Network(Q, Q̂, opt)
     replay_buffer = ReplayBuffer([])
 
     return DQN_params, DQN_network, replay_buffer
