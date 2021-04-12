@@ -17,7 +17,7 @@ end
 function fmp_model_init(dqn_params, dqn_network, buffer, sim_params)
 
     # first define model properties/space/etc for ABM
-    extents = (1,1)
+    extents = (0.5, 0.5)
     action_dict = Dict()
     if sim_params.num_dimensions == "1D"
         @info "1D Selected"
@@ -35,11 +35,11 @@ function fmp_model_init(dqn_params, dqn_network, buffer, sim_params)
         @error "Incorrect number of Dimensions"
     end
     properties = Dict(:FMP_params=>fmp_parameter_init(),
-                      :dt => 0.25,
+                      :dt => 0.05,
                       :num_agents=>sim_params.num_agents,
                       :num_goals=>sim_params.num_goals,
                       :num_steps=>sim_params.num_steps,
-                      :step_inc=>2,
+                      :step_inc=>1,
                       :SS=>StateSpace(  #GA, GO
                            zeros(Bool, sim_params.num_agents, sim_params.num_goals),
                            zeros(Bool, sim_params.num_agents, sim_params.num_goals),
@@ -70,6 +70,8 @@ function fmp_model_add_agents!(model)
         LostHiker(model)
     elseif model.sim_params.sim_type == "simple_test"
         SimpleTest(model)
+    elseif model.sim_params.sim_type == "multi_test"
+        SimpleMultiTest(model)
     else
         @error "Simulation type not defined"
     end

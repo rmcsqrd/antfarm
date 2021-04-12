@@ -31,26 +31,22 @@ function DQN_train!(model)
         return (y - model.DQN.Q(st)[at])^2
     end
 
-    for _ in 1:model.num_agents
+    # get minibatch data of size k from buffer (H) and update grads
+    dθ = Zygote.Grads(IdDict(ps => nothing for ps in params(model.DQN.Q)), params(model.DQN.Q))
 
-        # get minibatch data of size k from buffer (H) and update grads
-        dθ = Zygote.Grads(IdDict(ps => nothing for ps in params(model.DQN.Q)), params(model.DQN.Q))
+    data = rand(model.buffer.H, model.DQN_params.k)
+    for d in data
 
-        data = rand(model.buffer.H, model.DQN_params.k)
-        for d in data
-
-            # compute gradient
-            loss_j = 0
-            dθ .+= gradient(params(model.DQN.Q)) do
-                loss_j = DQN_loss(d...)
-                return loss_j
-            end
-            training_loss += loss_j
+        # compute gradient
+        loss_j = 0
+        dθ .+= gradient(params(model.DQN.Q)) do
+            loss_j = DQN_loss(d...)
+            return loss_j
         end
-
-        update!(model.DQN.opt, params(model.DQN.Q), dθ)
+        training_loss += loss_j
     end
 
+    update!(model.DQN.opt, params(model.DQN.Q), dθ)
     model.DQN_params.ep_loss += training_loss
 end
 
