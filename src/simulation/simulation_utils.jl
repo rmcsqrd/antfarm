@@ -24,7 +24,7 @@ function run_model_plot!(model, agent_step!, model_step!)
         model_step!,
         title = "FMP Simulation, Epoch #$(model.sim_params.episode_number)",
         frames = model.sim_params.num_vid_steps+1,  # weird issue with model stepping was causing NaN
-        framerate = 100,
+        framerate = 25,
         resolution = (600, 600),
         as = as_f(a) = 1200*1/minimum(a.SSdims)*a.radius,  ## this was defined empirically
         ac = ac_f(a) = a.type in (:A, :O) ? a.color : "#A9A9A9",

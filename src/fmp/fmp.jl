@@ -35,7 +35,7 @@ function fmp_model_init(dqn_params, dqn_network, buffer, sim_params)
         @error "Incorrect number of Dimensions"
     end
     properties = Dict(:FMP_params=>fmp_parameter_init(),
-                      :dt => 0.1,
+                      :dt => 0.25,
                       :num_agents=>sim_params.num_agents,
                       :num_goals=>sim_params.num_goals,
                       :num_steps=>sim_params.num_steps,
