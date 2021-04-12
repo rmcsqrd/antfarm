@@ -30,59 +30,95 @@ end
 function DQN_train!(model)
     
     training_loss = 0
-    for _ in 1:model.num_agents
 
-        function DQN_loss(st, at, rt, st1)
-            y = rt + model.DQN_params.γ*maximum(model.DQN.Q̂(st1))
-            loss =  y - model.DQN.Q(st)[at]
-            return loss
+    # define loss function
+    function DQN_loss(st, at, rt, st1)
+        return model.DQN.Q(st)[at]
+    end
+
+    function TD(st, at, rt, st1)
+        y = rt + model.DQN_params.γ*maximum(model.DQN.Q̂(st1))
+        δj = y - model.DQN.Q(st)[at]
+        return δj
+    end
+
+    # define PER helper function
+    function importance_sampling_weight(Pj, N)
+        # anneal beta and compute weight
+        βp = model.DQN_params.β(model.sim_params.episode_number)
+        wj = (1/N * 1/Pj)^βp
+        
+        # scale
+        if model.buffer.max_w != 0
+            wj = wj/model.buffer.max_w
         end
 
+        # overwrite weight max if required
+        if wj > model.buffer.max_w
+            model.buffer.max_w = wj
+        end
+        return wj
+    end
+
+    for _ in 1:model.num_agents
 
         # get minibatch data of size k from buffer (H) and update grads
         dθ = Zygote.Grads(IdDict(ps => nothing for ps in model.DQN.θ), model.DQN.θ)
+        probs = ProbabilityWeights((model.buffer.p .^ model.DQN_params.α) /sum(model.buffer.p .^ model.DQN_params.α))
+
+#        display(model.buffer.p)
+#        display(model.buffer.H)
+#        @show model.buffer.max_w
+#        @show model.buffer.max_p
         for _ in 1:model.DQN_params.k
 
             # sample according to bias and compute weight
             N = length(model.buffer.H)
 
-            probs = ProbabilityWeights((model.buffer.p .^ model.DQN_params.α)/sum(model.buffer.p .^ model.DQN_params.α))
             j = sample(1:N, probs)
 
             # compute weight and scale
-            wj = (1/N*1/probs[j])^model.DQN_params.β(model.sim_params.episode_number)
-            if model.buffer.max_w != 0
-                wj = wj/model.buffer.max_w
-            end
+            wj = importance_sampling_weight(probs[j], N)
 
-            # overwrite weight max if required
-            if wj > model.buffer.max_w
-                model.buffer.max_w = wj
+            # compute gradient
+            loss_j = 0
+            Hj = model.buffer.H[j]
+            dθj = gradient(model.DQN.θ) do
+                loss_j = DQN_loss(Hj...)
+                return loss_j
             end
-
-            # accumulate gradient
-            pj = 0
-            dθ .+= gradient(model.DQN.θ) do
-                δj = DQN_loss(model.buffer.H[j]...)
-                pj = abs(δj)
-                training_loss += abs(δj)
-                return δj*wj
-            end
-            probs[j] = pj
+            #display(dθj.grads)
+            # modify gradient by weight and TD
+            δj = TD(model.buffer.H[j]...)
+#            @show loss_j
+#            @show δj
+#            @show wj
+#            display( dθ.grads)
+#            println()
+            model.buffer.p[j] = abs(δj)
+            training_loss += δj*wj*loss_j
+            #dθ .+= dθj .*(δj*wj)
+#            dθj = dθj .*(δj*wj)
+#            display(dθj.grads)
+#            println()
+#            dθ .+= dθj .*(δj*wj)
 
             # overwrite probability max if required
-            if pj > model.buffer.max_p
-                model.buffer.max_p = pj
+            if model.buffer.p[j] > model.buffer.max_p
+                model.buffer.max_p = model.buffer.p[j]
             end
         end
         update!(model.DQN.opt, model.DQN.θ, dθ)
 
-#        x = [0.2;0.5]
-#        display(model.DQN.Q(x))
     
-        # do soft update of target network
-        for i in 1:length(model.DQN.θ⁻)
-            model.DQN.θ⁻[i] .= model.DQN.θ[i]*model.DQN_params.τ + model.DQN.θ⁻[i]*(1-model.DQN_params.τ)
+       # do soft update of target network
+
+        x = [0.2;0.5]
+#        for i in 1:length(model.DQN.θ⁻)
+#            model.DQN.θ⁻[i] .= model.DQN.θ[i]*model.DQN_params.τ + model.DQN.θ⁻[i]*(1-model.DQN_params.τ)
+#        end
+        if model.sim_params.episode_number % 50 == 0
+            model.DQN.Q̂ = model.DQN.Q
         end
     end
 
@@ -125,8 +161,8 @@ function DQN_init(sim_params)
     η = 0.00025 
     # note, 0.00025 and hidden layer dim = 16 work for RMSProp
     #η = 0.00025
-    #opt = Flux.Optimise.Optimiser(ClipValue(1), ADAM(η))
-    opt = RMSProp(η)
+    opt = Flux.Optimise.Optimiser(ClipValue(1), ADAM(η))
+    #opt = RMSProp(η)
 
 ## HYPER PARAMS
 #    α   # prioritization factor
@@ -147,7 +183,7 @@ function DQN_init(sim_params)
     β(i) = minimum((maximum((β_min, i/β_factor)),1))
     K = 1000
     k = 32
-    N = 10000
+    N = 50_000
     γ = 0.99
     ϵ_factor = 1000
     ϵ(i) = maximum((0.1, (ϵ_factor-i)/ϵ_factor))

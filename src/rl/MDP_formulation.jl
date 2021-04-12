@@ -37,6 +37,7 @@ function RL_Update!(model)
 
             # update agent with action
             model.agents[agent_id].tau = model.agents[agent_id].pos .+ model.action_dict[a_t1]
+            
             # update episode reward
             model.DQN_params.ep_rew += r_t
 
