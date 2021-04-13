@@ -17,7 +17,7 @@ end
 function fmp_model_init(dqn_params, dqn_network, buffer, sim_params)
 
     # first define model properties/space/etc for ABM
-    extents = (0.5, 0.5)
+    extents = (1,1)
     action_dict = Dict()
     if sim_params.num_dimensions == "1D"
         @info "1D Selected"
@@ -35,7 +35,7 @@ function fmp_model_init(dqn_params, dqn_network, buffer, sim_params)
         @error "Incorrect number of Dimensions"
     end
     properties = Dict(:FMP_params=>fmp_parameter_init(),
-                      :dt => 0.1,
+                      :dt => 0.25,
                       :num_agents=>sim_params.num_agents,
                       :num_goals=>sim_params.num_goals,
                       :num_steps=>sim_params.num_steps,
@@ -137,11 +137,6 @@ function model_step!(model)
     fmp_update_interacting_pairs(model)
     for agent_id in keys(model.agents)
         fmp_update_vel(model.agents[agent_id], model)
-
-        # update agent states
-        model.agents[agent_id].s_t1 = model.agents[agent_id].s_t
-        model.agents[agent_id].s_t = model.agents[agent_id].pos
-
     end
 
     # train model if required

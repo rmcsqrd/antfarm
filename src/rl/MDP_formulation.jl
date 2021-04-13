@@ -36,34 +36,43 @@ function RL_Update!(model)
             
             # update episode reward
             model.DQN_params.ep_rew += r_t
-
         end
     end
 
 end
 
 function get_state(model, agent_id, i)
-#            # BONE, probably going to remove the whole GA, GO stuff
-#            # first, determine agent i's knowledge of goal positions
-#            GAi = model.SS.GA[i, :]
-#
-#            # next, compare GA with goal locations. Return true location if
-#            # agent i is aware of goal location, (Inf, Inf) if not
-#            goal_pos_i = [xi == 1 ? yi : (-1,-1) for xi in GAi, yi in goal_loc_array[1,:]]  
-#            # vectorize to create state. Need to use iterators because
-#            # vec(Tuple) doesn't work
-#            s_ti = round.([collect(Iterators.flatten(model.agents[agent_id].s_t));
-#                   #collect(Iterators.flatten(goal_pos_i));  # BONE
-#                   #vec(GAi)  # BONE
-#                  ], digits=3)
+   
+    # store previous position
+    s_t1 = model.agents[agent_id].s_t
+
+    # compute relative distances
+    s_t = []
+    push!(s_t, model.agents[agent_id].pos)
+
+    for j in keys(sort(collect(pairs(model.Goals))))
+        # figure out relative distances to goals
+        push!(s_t, model.Goals[j] .- model.agents[agent_id].pos)
+    end
+
+    # NOTE: just keep pushing into s_t for state
 
 
-            s_t1 = collect(Iterators.flatten(model.agents[agent_id].s_t1))
-            s_t = collect(Iterators.flatten(model.agents[agent_id].s_t))
+    # finally, flatten into a vector and return the state
+    s_t = collect(Iterators.flatten(s_t))
 
-            s_t1 = round.(s_t1, digits=3)
-            s_t = round.(s_t, digits=3)
-            return s_t1, s_t
+    # round
+    if !isnothing(model.agents[agent_id].s_t1)
+        s_t1 = round.(s_t1, digits=3)
+    end
+    s_t = round.(s_t, digits=3)
+
+    # save to FMP agent
+    model.agents[agent_id].s_t = s_t
+    model.agents[agent_id].s_t1 = s_t1
+
+    # return 
+    return s_t1, s_t
 end
 
 function GlobalStateTransition!(model)

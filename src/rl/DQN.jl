@@ -69,28 +69,21 @@ function DQN_policy_eval!(s_t, model)
 end
 
 function DQN_buffer_update!(s_t1, a_t1, r_t, s_t, model)
-            if length(model.buffer.H) == model.DQN_params.N
-                popfirst!(model.buffer.H)
+    # first step in model is nothing and we don't want to push that
+    if !isnothing(s_t1)
+        if length(model.buffer.H) == model.DQN_params.N
+            popfirst!(model.buffer.H)
 #                popfirst!(model.buffer.p)
-            end
-            push!(model.buffer.H, (s_t1, a_t1, r_t, s_t))
+        end
+        push!(model.buffer.H, (s_t1, a_t1, r_t, s_t))
 #            push!(model.buffer.p, model.buffer.max_p)
+    end
 end
 
 function DQN_init(sim_params)
-    state_dim = 2#+sim_params.num_goals*2 #+ sim_params.num_goals
-    action_dim = 0
-    if sim_params.num_dimensions == "1D"
-        action_dim = 3
-    elseif sim_params.num_dimensions == "2D"
-        action_dim = 5
-    else
-        @error "Wrong number of dimensions"
-    end
-
     Q = Chain(
-                  Dense(state_dim, 64, relu),
-                  Dense(64, action_dim)
+                  Dense(sim_params.state_dim, 64, relu),
+                  Dense(64, sim_params.action_dim)
                  )
     Q̂ = deepcopy(Q)
     η = 0.00025 

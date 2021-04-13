@@ -13,6 +13,8 @@ mutable struct SimulationParams
     total_steps::Int64         # total number of model steps
     prev_run::String           # previous run indicator string (load in previous?)
     num_dimensions::String     # 1D vs 2D
+    state_dim::Int64
+    action_dim::Int64
 end
 
 function model_run(;num_agents=20,
@@ -37,6 +39,17 @@ function model_run(;num_agents=20,
         loss_hist = prev_model[:loss_hist]
     else
         @info "No previous model specified, starting from scratch..."
+        state_dim = 2+2*num_goals
+        action_dim = 0
+        if num_dims == "1D"
+            action_dim = 3
+        elseif num_dims == "2D"
+            action_dim = 5
+        else
+            @error "Wrong number of dimensions"
+        end
+
+        state_dim = 2+2*num_goals
         sim_params = SimulationParams(num_agents,
                                   num_goals,
                                   num_steps,
@@ -49,6 +62,8 @@ function model_run(;num_agents=20,
                                   0,
                                   prev_run,
                                   num_dims,
+                                  state_dim,
+                                  action_dim,
                                  )
         reward_hist = zeros(sim_params.num_episodes)
         loss_hist = zeros(sim_params.num_episodes)
