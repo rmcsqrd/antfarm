@@ -16,6 +16,7 @@ function RL_Update!(model)
     # next, do individual agent actions
     goal_loc_array = sort(collect(values(model.Goals)))
     for agent_id in keys(model.agents)
+
         if model.agents[agent_id].type == :A
             i = model.Agents2RL[agent_id]
 
