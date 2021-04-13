@@ -14,7 +14,6 @@ function run_model_plot!(model, agent_step!, model_step!)
         rm(filepath)
     catch
     end
-
     # plot stuff
     filepath = string(homedir(),"/Programming/antfarm/src/data_output/episode_$(model.sim_params.episode_number).mp4")
     InteractiveDynamics.abm_video(

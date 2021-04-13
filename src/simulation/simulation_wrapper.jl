@@ -15,6 +15,8 @@ mutable struct SimulationParams
     num_dimensions::String     # 1D vs 2D
     state_dim::Int64
     action_dim::Int64
+    dt_sim::Float64
+    dt_vid::Float64
 end
 
 function model_run(;num_agents=20,
@@ -27,6 +29,8 @@ function model_run(;num_agents=20,
                     rl_type = "DQN",
                     prev_run="none",
                     num_dims="2D",
+                    dt_sim = 0.25,
+                    dt_vid = 0.05,
                   )
 
     # setup simulation parameters
@@ -49,7 +53,6 @@ function model_run(;num_agents=20,
             @error "Wrong number of dimensions"
         end
 
-        state_dim = 2+2*num_goals
         sim_params = SimulationParams(num_agents,
                                   num_goals,
                                   num_steps,
@@ -64,6 +67,8 @@ function model_run(;num_agents=20,
                                   num_dims,
                                   state_dim,
                                   action_dim,
+                                  dt_sim,
+                                  dt_vid,
                                  )
         reward_hist = zeros(sim_params.num_episodes)
         loss_hist = zeros(sim_params.num_episodes)
