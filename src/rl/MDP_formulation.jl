@@ -61,12 +61,6 @@ function get_state(model, agent_id, i)
     # finally, flatten into a vector and return the state
     s_t = collect(Iterators.flatten(s_t))
 
-    # round
-    if !isnothing(model.agents[agent_id].s_t1)
-        s_t1 = round.(s_t1, digits=3)
-    end
-    s_t = round.(s_t, digits=3)
-
     # save to FMP agent
     model.agents[agent_id].s_t = s_t
     model.agents[agent_id].s_t1 = s_t1
@@ -141,7 +135,8 @@ function GlobalReward(model)
             #rewards[i] += sum(model.SS.GO[i,:])*1*alpha
 
             # agents pay penalty for goals they don't know location of
-            rewards[i] += -0.01*sum(1 .- model.SS.GA[i, :])
+            #rewards[i] += -0.001*sum(1 .- model.SS.GA[i, :])  #BONE
+            #rewards[i] += -0.001*sum(1 .- model.SS.GO[i, :])
 
         end
     end

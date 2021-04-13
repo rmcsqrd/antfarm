@@ -22,7 +22,7 @@ end
 function model_run(;num_agents=20,
                     num_goals = 20,
                     num_steps = 10000,     # number of steps per episode (epoch)
-                    num_vid_steps = 1000,
+                    num_vid_steps = 2500,
                     num_episodes = 10000, # number of episodes (epochs)
                     sim_vid_interval = 100,
                     sim_type = "lost_hiker",

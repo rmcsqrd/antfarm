@@ -43,6 +43,7 @@ function DQN_train!(model)
             loss_j = DQN_loss(d...)
             return loss_j
         end
+        #display(dθ.grads)
         training_loss += loss_j
     end
 
@@ -86,11 +87,11 @@ function DQN_init(sim_params)
                   Dense(64, sim_params.action_dim)
                  )
     Q̂ = deepcopy(Q)
-    η = 0.00025 
+    η = 0.000025 
     # note, 0.00025 and hidden layer dim = 16 work for RMSProp
     #η = 0.00025
-    #opt = Flux.Optimise.Optimiser(ClipValue(1), RMSProp(η))
-    opt = Flux.Optimise.Optimiser(ClipValue(10), RMSProp(η))
+    opt = Flux.Optimise.Optimiser(ClipValue(1), RMSProp(η))
+    #opt = Flux.Optimise.Optimiser(ClipValue(10), RMSProp(η))
     #opt = RMSProp(η)
 
 ## HYPER PARAMS
@@ -103,15 +104,15 @@ function DQN_init(sim_params)
 #    ep_rew  # episode reward
 #    ep_loss  # episode loss
 
-    K = 10_000
+    K = 1_000
     k = 32
-    N = 500_000
+    N = 1_000_000
     γ = 0.99
     ϵ_factor = 1000
     ϵ(i) = maximum((0.1, (ϵ_factor-i)/ϵ_factor))
     τ = 0.0001
     γ = 0.99
-    C = 10_000
+    C = 100_000
 
     DQN_params = DQN_HyperParams(K, k, N, τ, ϵ, γ, C, 0, 0)
     DQN_network = DQN_Network(Q, Q̂, opt)

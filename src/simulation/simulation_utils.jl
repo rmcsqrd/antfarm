@@ -2,6 +2,7 @@
 Run model only
 """
 function run_model!(model, agent_step!, model_step!)
+    model.properties[:dt] = model.sim_params.dt_sim
     run!(model, agent_step!, model_step!, model.num_steps)
 end
 
@@ -14,6 +15,9 @@ function run_model_plot!(model, agent_step!, model_step!)
         rm(filepath)
     catch
     end
+
+    model.properties[:dt] = model.sim_params.dt_vid
+
     # plot stuff
     filepath = string(homedir(),"/Programming/antfarm/src/data_output/episode_$(model.sim_params.episode_number).mp4")
     InteractiveDynamics.abm_video(
@@ -23,7 +27,7 @@ function run_model_plot!(model, agent_step!, model_step!)
         model_step!,
         title = "FMP Simulation, Epoch #$(model.sim_params.episode_number)",
         frames = model.sim_params.num_vid_steps+1,  # weird issue with model stepping was causing NaN
-        framerate = 25,
+        framerate = 100,
         resolution = (600, 600),
         as = as_f(a) = 1200*1/minimum(a.SSdims)*a.radius,  ## this was defined empirically
         ac = ac_f(a) = a.type in (:A, :O) ? a.color : "#A9A9A9",
