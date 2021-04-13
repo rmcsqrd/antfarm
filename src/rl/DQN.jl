@@ -78,7 +78,7 @@ function DQN_buffer_update!(s_t1, a_t1, r_t, s_t, model)
 end
 
 function DQN_init(sim_params)
-    state_dim = 2#+sim_params.num_goals*2 + sim_params.num_goals
+    state_dim = 2#+sim_params.num_goals*2 #+ sim_params.num_goals
     action_dim = 0
     if sim_params.num_dimensions == "1D"
         action_dim = 3
