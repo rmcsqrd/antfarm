@@ -31,24 +31,27 @@ function DQN_train!(model)
         return (y - model.DQN.Q(st_1)[at_1])^2
     end
 
-    # get minibatch data of size k from buffer (H) and update grads
-    dθ = Zygote.Grads(IdDict(ps => nothing for ps in params(model.DQN.Q)), params(model.DQN.Q))
-
     data = rand(model.buffer.H, model.DQN_params.k)
-    for d in data
+    Flux.train!(DQN_loss, params(model.DQN.Q), data, model.DQN.opt)
 
-        # compute gradient
-        loss_j = 0
-        dθ .+= gradient(params(model.DQN.Q)) do
-            loss_j = DQN_loss(d...)
-            return loss_j
-        end
-        #display(dθ.grads)
-        training_loss += loss_j
-    end
-
-    update!(model.DQN.opt, params(model.DQN.Q), dθ)
-    model.DQN_params.ep_loss += training_loss
+#    # get minibatch data of size k from buffer (H) and update grads
+#    dθ = Zygote.Grads(IdDict(ps => nothing for ps in params(model.DQN.Q)), params(model.DQN.Q))
+#
+#    data = rand(model.buffer.H, model.DQN_params.k)
+#    for d in data
+#
+#        # compute gradient
+#        loss_j = 0
+#        dθ .+= gradient(params(model.DQN.Q)) do
+#            loss_j = DQN_loss(d...)
+#            return loss_j
+#        end
+#        #display(dθ.grads)
+#        training_loss += loss_j
+#    end
+#
+#    update!(model.DQN.opt, params(model.DQN.Q), dθ)
+#    model.DQN_params.ep_loss += training_loss
 end
 
 function DQN_update_check!(model)
@@ -74,10 +77,8 @@ function DQN_buffer_update!(s_t1, a_t1, r_t, s_t, model)
     if !isnothing(s_t1)
         if length(model.buffer.H) == model.DQN_params.N
             popfirst!(model.buffer.H)
-#                popfirst!(model.buffer.p)
         end
         push!(model.buffer.H, (s_t1, a_t1, r_t, s_t))
-#            push!(model.buffer.p, model.buffer.max_p)
     end
 end
 
@@ -87,12 +88,12 @@ function DQN_init(sim_params)
                   Dense(16, sim_params.action_dim)
                  )
     Q̂ = deepcopy(Q)
-    η = 0.00001
+    η = 0.001
     # note, 0.00025 and hidden layer dim = 16 work for RMSProp
     #η = 0.00025
-    opt = Flux.Optimise.Optimiser(ClipValue(1), RMSProp(η))
+    opt = Flux.Optimise.Optimiser(ClipValue(0.5), ADAM(η))
     #opt = Flux.Optimise.Optimiser(ClipValue(10), RMSProp(η))
-    #opt = RMSProp(η)
+    #opt = ADAM(η)
 
 ## HYPER PARAMS
 #    K   # replay period
@@ -108,7 +109,7 @@ function DQN_init(sim_params)
     k = 32
     N = 1_000_000
     γ = 0.99
-    ϵ_factor = 300
+    ϵ_factor = 1000
     ϵ(i) = maximum((0.1, (ϵ_factor-i)/ϵ_factor))
     τ = 0.0001
     γ = 0.99

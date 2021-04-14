@@ -31,35 +31,48 @@ function DQN_train!(model)
     training_loss = 0
 
     # get minibatch data of size k from buffer (H) and update grads
-    dθ = Zygote.Grads(IdDict(ps => nothing for ps in params(model.DQN.Q)), params(model.DQN.Q))
+    #dθ = Zygote.Grads(IdDict(ps => nothing for ps in params(model.DQN.Q)), params(model.DQN.Q))
 
     N = length(model.buffer.H)
     pj_alpha = model.buffer.p .^ model.DQN_params.α
     probs = ProbabilityWeights(pj_alpha ./ sum(pj_alpha))
     j_list = sample(1:N, probs, model.DQN_params.k)
 
-    for j in j_list
+    data = []
+    p = []
 
-        # compute gradient
+    for j in j_list
+        push!(data, model.buffer.H[j])
+    end
+
+    function DQN_PER_loss(s_t1, a_t1, r_t, s_t)
+        y = r_t + model.DQN_params.γ*maximum(model.DQN.Q̂(s_t))
+        δj = Flux.Losses.huber_loss(y, model.DQN.Q(s_t1)[a_t1])
+        return δj
+    end
+
+    for (cnt, d) in enumerate(data)
         pj = 0
-        st_1, at_1, rt, st = model.buffer.H[j]
-        dθ .+= gradient(params(model.DQN.Q)) do
-            y = rt + model.DQN_params.γ*maximum(model.DQN.Q̂(st))
-            δj = Flux.Losses.huber_loss(y, model.DQN.Q(st_1)[at_1])
-            training_loss += δj
+        s_t1, a_t1, r_t, s_t = d
+        dθ = gradient(params(model.DQN.Q)) do
+            δj = DQN_PER_loss(d...)
             pj = abs(δj)
-            return δj
+            return δj*model.DQN.Q(s_t1)[a_t1]
         end
+        push!(p, pj)
+        update!(model.DQN.opt, params(model.DQN.Q), dθ)
+    end
+    #Flux.train!(DQN_PER_loss, params(model.DQN.Q), data, model.DQN.opt)
 
         # update selection probability
-        model.buffer.p[j] = pj + 0.001  # want non-zero probability of selection
+    for (cnt, j) in enumerate(j_list)
+        model.buffer.p[j] = p[cnt] + 0.001  # want non-zero probability of selection
         if model.buffer.p[j] > model.buffer.max_p
             model.buffer.max_p = model.buffer.p[j]
         end
         #display(dθ.grads)
     end
 
-    update!(model.DQN.opt, params(model.DQN.Q), dθ)
     model.DQN_params.ep_loss += training_loss
 end
 
@@ -95,11 +108,11 @@ end
 
 function DQN_init(sim_params)
     Q = Chain(
-                  Dense(sim_params.state_dim, 64, relu),
-                  Dense(64, sim_params.action_dim)
+                  Dense(sim_params.state_dim, 16, relu),
+                  Dense(16, sim_params.action_dim)
                  )
     Q̂ = deepcopy(Q)
-    η = 0.0000001
+    η = 0.001
     # note, 0.00025 and hidden layer dim = 16 work for RMSProp
     #η = 0.00025
     #opt = Flux.Optimise.Optimiser(ClipValue(1), RMSProp(η))
@@ -122,7 +135,7 @@ function DQN_init(sim_params)
     β_factor = 1000
     β_min = 0.4
     β(i) = minimum((maximum((β_min, i/β_factor)),1))
-    K = 1_000
+    K = 100
     k = 32
     N = 250_000
     γ = 0.99
@@ -134,7 +147,7 @@ function DQN_init(sim_params)
 
     DQN_params = DQN_HyperParams(α, β, K, k, N, τ, ϵ, γ, C, 0, 0)
     DQN_network = DQN_Network(Q, Q̂, opt)
-    replay_buffer = ReplayBuffer([], [], 1^α, 0)
+    replay_buffer = ReplayBuffer([], [], 1, 0)
 
     return DQN_params, DQN_network, replay_buffer
 

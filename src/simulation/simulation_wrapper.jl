@@ -43,7 +43,8 @@ function model_run(;num_agents=20,
         loss_hist = prev_model[:loss_hist]
     else
         @info "No previous model specified, starting from scratch..."
-        state_dim = 2+2*num_goals
+        #state_dim = 2+2*num_goals
+        state_dim = 2*num_goals
         action_dim = 0
         if num_dims == "1D"
             action_dim = 3

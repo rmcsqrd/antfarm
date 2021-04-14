@@ -48,7 +48,7 @@ function get_state(model, agent_id, i)
 
     # compute relative distances
     s_t = []
-    push!(s_t, model.agents[agent_id].pos)
+    #push!(s_t, model.agents[agent_id].pos)
 
     for j in keys(sort(collect(pairs(model.Goals))))
         # figure out relative distances to goals
