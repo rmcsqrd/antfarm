@@ -80,7 +80,7 @@ function DQN_update_check!(model)
 
     # save model
     if model.sim_params.total_steps % model.DQN_params.C == 0
-        model.DQN.Q̂ = model.DQN.Q
+        model.DQN.Q̂ = deepcopy(model.DQN.Q)
     end
 end
 
