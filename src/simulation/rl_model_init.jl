@@ -34,6 +34,7 @@ function SimpleTest(model)
     x,y = model.space.extent
     #starting_pos = (rand(0.2:0.1:x*0.8), rand(0.2:0.1:y*0.8))
     starting_pos = (0.8*x, 0.5*y)
+    #starting_pos = (0.2*x, 0.5*y)
     for i in 1:model.num_agents
         pos = starting_pos .+ (rand(0:0.00001:0.0001), rand(0:0.00001:0.0001))
         vel = (0,0)

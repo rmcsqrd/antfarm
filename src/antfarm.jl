@@ -31,8 +31,8 @@ include("simulation/simulation_utils.jl")
 # include RL stuff
 include("rl/MDP_formulation.jl")
 #include("rl/A3C.jl")
-#include("rl/DQN.jl")
-include("rl/DQN_per.jl")
+include("rl/DQN.jl")
+#include("rl/DQN_per.jl")
 
 # include analysis stuff
 include("analysis/analysis_tools.jl")

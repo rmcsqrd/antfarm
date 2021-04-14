@@ -26,9 +26,9 @@ function DQN_train!(model)
     training_loss = 0
 
     # define loss function
-    function DQN_loss(st, at, rt, st1)
-        y = rt + model.DQN_params.γ*maximum(model.DQN.Q̂(st1))
-        return (y - model.DQN.Q(st)[at])^2
+    function DQN_loss(st_1, at_1, rt, st)
+        y = rt + model.DQN_params.γ*maximum(model.DQN.Q̂(st))
+        return (y - model.DQN.Q(st_1)[at_1])^2
     end
 
     # get minibatch data of size k from buffer (H) and update grads
@@ -83,11 +83,11 @@ end
 
 function DQN_init(sim_params)
     Q = Chain(
-                  Dense(sim_params.state_dim, 64, relu),
-                  Dense(64, sim_params.action_dim)
+                  Dense(sim_params.state_dim, 16, relu),
+                  Dense(16, sim_params.action_dim)
                  )
     Q̂ = deepcopy(Q)
-    η = 0.000025 
+    η = 0.00001
     # note, 0.00025 and hidden layer dim = 16 work for RMSProp
     #η = 0.00025
     opt = Flux.Optimise.Optimiser(ClipValue(1), RMSProp(η))
@@ -104,15 +104,15 @@ function DQN_init(sim_params)
 #    ep_rew  # episode reward
 #    ep_loss  # episode loss
 
-    K = 1_000
+    K = 100
     k = 32
     N = 1_000_000
     γ = 0.99
-    ϵ_factor = 1000
+    ϵ_factor = 300
     ϵ(i) = maximum((0.1, (ϵ_factor-i)/ϵ_factor))
     τ = 0.0001
     γ = 0.99
-    C = 100_000
+    C = 10_000
 
     DQN_params = DQN_HyperParams(K, k, N, τ, ϵ, γ, C, 0, 0)
     DQN_network = DQN_Network(Q, Q̂, opt)

@@ -30,25 +30,6 @@ function DQN_train!(model)
     
     training_loss = 0
 
-    # define PER helper function
-    function importance_sampling_weight(j, N)
-        # anneal beta and compute weight
-        βp = model.DQN_params.β(model.sim_params.episode_number)
-        pj = model.buffer.p[j]
-        wj = (1/N * 1/pj)^βp
-        
-        # scale
-        if model.buffer.max_w != 0
-            wj = wj/model.buffer.max_w
-        end
-
-        # overwrite weight max if required
-        if wj > model.buffer.max_w
-            model.buffer.max_w = wj
-        end
-        return wj
-    end
-
     # get minibatch data of size k from buffer (H) and update grads
     dθ = Zygote.Grads(IdDict(ps => nothing for ps in params(model.DQN.Q)), params(model.DQN.Q))
 
@@ -60,19 +41,18 @@ function DQN_train!(model)
     for j in j_list
 
         # compute gradient
-        wj = importance_sampling_weight(j, N)
-        loss_j = 0
         pj = 0
         st_1, at_1, rt, st = model.buffer.H[j]
         dθ .+= gradient(params(model.DQN.Q)) do
             y = rt + model.DQN_params.γ*maximum(model.DQN.Q̂(st))
-            wj = importance_sampling_weight(j, N)
-            δj = y - model.DQN.Q(st_1)[at_1]
+            δj = Flux.Losses.huber_loss(y, model.DQN.Q(st_1)[at_1])
+            training_loss += δj
             pj = abs(δj)
-            training_loss += wj*δj*model.DQN.Q(st_1)[at_1]
-            return wj*δj*model.DQN.Q(st_1)[at_1]
+            return δj
         end
-        model.buffer.p[j] = pj
+
+        # update selection probability
+        model.buffer.p[j] = pj + 0.001  # want non-zero probability of selection
         if model.buffer.p[j] > model.buffer.max_p
             model.buffer.max_p = model.buffer.p[j]
         end
@@ -119,12 +99,12 @@ function DQN_init(sim_params)
                   Dense(64, sim_params.action_dim)
                  )
     Q̂ = deepcopy(Q)
-    η = 0.000025 
+    η = 0.0000001
     # note, 0.00025 and hidden layer dim = 16 work for RMSProp
     #η = 0.00025
-    opt = Flux.Optimise.Optimiser(ClipValue(1), RMSProp(η))
+    #opt = Flux.Optimise.Optimiser(ClipValue(1), RMSProp(η))
     #opt = Flux.Optimise.Optimiser(ClipValue(10), RMSProp(η))
-    #opt = RMSProp(η)
+    opt = Flux.Optimise.Optimiser(ClipValue(1), ADAM(η))
 
 ## HYPER PARAMS
 #    α   # prioritization factor
@@ -144,13 +124,13 @@ function DQN_init(sim_params)
     β(i) = minimum((maximum((β_min, i/β_factor)),1))
     K = 1_000
     k = 32
-    N = 100_000
+    N = 250_000
     γ = 0.99
     ϵ_factor = 1000
     ϵ(i) = maximum((0.1, (ϵ_factor-i)/ϵ_factor))
     τ = 0.0001
     γ = 0.99
-    C = 100_000
+    C = 10_000
 
     DQN_params = DQN_HyperParams(α, β, K, k, N, τ, ϵ, γ, C, 0, 0)
     DQN_network = DQN_Network(Q, Q̂, opt)

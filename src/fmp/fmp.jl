@@ -17,7 +17,7 @@ end
 function fmp_model_init(dqn_params, dqn_network, buffer, sim_params)
 
     # first define model properties/space/etc for ABM
-    extents = (1,1)
+    extents = (0.5,0.5)
     action_dict = Dict()
     if sim_params.num_dimensions == "1D"
         @info "1D Selected"

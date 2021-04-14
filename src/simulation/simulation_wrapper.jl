@@ -23,14 +23,14 @@ function model_run(;num_agents=20,
                     num_goals = 20,
                     num_steps = 10000,     # number of steps per episode (epoch)
                     num_vid_steps = 2500,
-                    num_episodes = 10000, # number of episodes (epochs)
+                    num_episodes = 10001, # number of episodes (epochs)
                     sim_vid_interval = 100,
                     sim_type = "lost_hiker",
                     rl_type = "DQN",
                     prev_run="none",
                     num_dims="2D",
-                    dt_sim = 0.25,
-                    dt_vid = 0.05,
+                    dt_sim = 0.025,
+                    dt_vid = 0.025,
                   )
 
     # setup simulation parameters

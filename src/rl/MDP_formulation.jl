@@ -136,7 +136,7 @@ function GlobalReward(model)
 
             # agents pay penalty for goals they don't know location of
             #rewards[i] += -0.001*sum(1 .- model.SS.GA[i, :])  #BONE
-            #rewards[i] += -0.001*sum(1 .- model.SS.GO[i, :])
+            rewards[i] += -0.01*sum(1 .- model.SS.GO[i, :])
 
         end
     end

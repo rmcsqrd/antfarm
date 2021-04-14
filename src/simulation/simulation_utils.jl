@@ -2,7 +2,6 @@
 Run model only
 """
 function run_model!(model, agent_step!, model_step!)
-    model.properties[:dt] = model.sim_params.dt_sim
     run!(model, agent_step!, model_step!, model.num_steps)
 end
 
@@ -16,7 +15,6 @@ function run_model_plot!(model, agent_step!, model_step!)
     catch
     end
 
-    model.properties[:dt] = model.sim_params.dt_vid
 
     # plot stuff
     filepath = string(homedir(),"/Programming/antfarm/src/data_output/episode_$(model.sim_params.episode_number).mp4")
