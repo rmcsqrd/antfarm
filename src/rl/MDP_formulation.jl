@@ -50,9 +50,20 @@ function get_state(model, agent_id, i)
     s_t = []
     #push!(s_t, model.agents[agent_id].pos)
 
-    for j in keys(sort(collect(pairs(model.Goals))))
+    for g in keys(sort(collect(pairs(model.Goals))))
         # figure out relative distances to goals
-        push!(s_t, model.Goals[j] .- model.agents[agent_id].pos)
+        push!(s_t, model.Goals[g] .- model.agents[agent_id].pos)
+    end
+
+    # store other agent relative distances as well
+    agent_keys = keys(model.agents)
+    sorted_keys = sort(collect(agent_keys))
+    for other_agent_id in sorted_keys
+        if model.agents[other_agent_id].type == :A
+            if other_agent_id != agent_id
+                push!(s_t, model.agents[other_agent_id].pos .- model.agents[agent_id].pos)
+            end
+        end
     end
 
     # NOTE: just keep pushing into s_t for state
@@ -93,6 +104,7 @@ function GlobalReward(model)
 
             # interagent function
             for neighbor_id in model.agents[agent_id].Ni  
+                rewards[i] -= 0.1
             end
         end
     end

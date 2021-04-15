@@ -54,7 +54,7 @@ function fmp_model_init(dqn_params, dqn_network, buffer, sim_params)
                       :buffer=>buffer
                      )
 
-    space2d = ContinuousSpace(extents; periodic = false)
+    space2d = ContinuousSpace(extents; periodic = true)  # periodic false will throw errors and my boundary enforcement is okay
     model = ABM(FMP_Agent, space2d, properties=properties)
 
     # add in agents
@@ -129,8 +129,6 @@ end
 
 function model_step!(model)
 
-    # do RL stuff 
-    RL_Update!(model)
 
     # do FMP stuff - figure out interacting pairs and update velocities
     # accordingly
@@ -138,6 +136,9 @@ function model_step!(model)
     for agent_id in keys(model.agents)
         fmp_update_vel(model.agents[agent_id], model)
     end
+    
+    # do RL stuff 
+    RL_Update!(model)
 
     # train model if required
     if model.t % model.DQN_params.K == 0

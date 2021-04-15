@@ -2,9 +2,9 @@ function LostHiker(model)
 
     # determine circle params
     absx, absy = model.space.extent
-    x, y = (absx, absy) .* 0.8 # also add scale factor so it doesn't end up outside of space
+    x, y = (absx, absy) .* 0.9 # also add scale factor so it doesn't end up outside of space
     #generate starting position
-    positions = [(i,j) for i in 0.2:0.05:x, j in 0.2:0.05:y]
+    positions = [(i,j) for i in 0.1:0.1:x, j in 0.1:0.1:y]
     starting_pos = sample(positions, model.num_agents+model.num_goals, replace=false)
     pos_cnt = 1
 
