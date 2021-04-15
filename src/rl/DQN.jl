@@ -47,10 +47,14 @@ function DQN_update_check!(model)
     end
 end
 
-function DQN_policy_eval!(s_t, model)
-    # select action via ϵ-greedy
+function DQN_policy_eval!(s_t, model, agent_id)
+    # select action via ϵ-greedy. Also select by inertia term τ
     if rand() < model.DQN_params.ϵ(model.sim_params.episode_number)
-         action = rand(1:length(keys(model.action_dict)))
+        if rand() < model.DQN_params.τ(model.sim_params.episode_number)
+            action = model.agents[agent_id].a_t1
+        else
+            action = rand(1:length(keys(model.action_dict)))
+        end
     else
         action = argmax(model.DQN.Q(s_t))
     end
@@ -92,14 +96,14 @@ function DQN_init(sim_params)
 
     K = 100
     k = 32
-    N = 250_000
+    N = 1_000_000
     γ = 0.99
-    ϵ_factor = 100
+    ϵ_factor = 1000
     ϵ(i) = maximum((0.1, (ϵ_factor-i)/ϵ_factor))
     τ_factor = 1000
     τ(i) = maximum((0.0, (τ_factor-i)/τ_factor))
     γ = 0.99
-    C = 10_000
+    C = 500_000
 
     DQN_params = DQN_HyperParams(K, k, N, τ, ϵ, γ, C, 0, 0)
     DQN_network = DQN_Network(Q, Q̂, opt)

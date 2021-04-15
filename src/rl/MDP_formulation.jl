@@ -28,7 +28,7 @@ function RL_Update!(model)
             DQN_buffer_update!(s_t1, a_t1, r_t, s_t, model)
 
             # select action according to RL policy
-            a_t = DQN_policy_eval!(s_t, model)
+            a_t = DQN_policy_eval!(s_t, model, agent_id)
             model.agents[agent_id].a_t1 = a_t
 
             # update agent with action

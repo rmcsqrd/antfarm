@@ -121,7 +121,7 @@ function agent_step!(agent, model)
     # check model extents to respect boundary
     px, py = agent.pos .+ model.dt .* agent.vel
     ex, ey = model.space.extent
-    if !(0 ≤ px ≤ ex && 0 ≤ py ≤ ey)
+    if !(0.05 ≤ px ≤ ex-0.05 && 0.05 ≤ py ≤ ey-0.05)
         agent.vel = (0.0, 0.0)
     end
     move_agent!(agent, model, model.dt)

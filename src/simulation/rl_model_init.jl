@@ -2,33 +2,35 @@ function LostHiker(model)
 
     # determine circle params
     absx, absy = model.space.extent
-    x, y = (absx, absy) .* 0.9 # also add scale factor so it doesn't end up outside of space
-    starting_pos = (rand(0:0.1:x), rand(0:0.1:y))
+    x, y = (absx, absy) .* 0.8 # also add scale factor so it doesn't end up outside of space
+    #generate starting position
+    positions = [(i,j) for i in 0.2:0.05:x, j in 0.2:0.05:y]
+    starting_pos = sample(positions, model.num_agents+model.num_goals, replace=false)
+    pos_cnt = 1
 
     # add some noise to positions because I was getting error for having agents in same position
 
     for i in 1:model.num_agents
         # set agent params
-        pos = starting_pos .+ (rand(0:0.00001:0.0001), rand(0:0.00001:0.0001))
+        pos = starting_pos[pos_cnt]
+        pos_cnt += 1
         vel = (0,0)
-        tau = (rand(0:0.01:x), rand(0:0.01:y))
+        tau = pos
         radius = model.FMP_params.d/2
-
-        if model.num_agents > 1
-            # if only one agent this returns an error
-            color = string("#", hex(range(HSV(0,1,1), stop=HSV(-360,1,1), length=model.num_agents)[i]))
-        else
-            color = "#FF0000"
-        end
-
+        color = "#FF0000"
 
         # seed agents with random positions initially
-        add_agent!(pos, model, vel, pos, color, :A, radius, model.space.extent, [], [],
-                   nothing, 3, nothing)
+        add_agent!(pos, model, vel, pos, color, :A, radius, model.space.extent, [], [], nothing, 3, nothing)
+    end
 
-        # add targets normally
-        add_agent!(tau, model, vel, tau, color, :T, radius, model.space.extent, [], [], 
-                   nothing, 3, nothing)
+    for i in 1:model.num_goals
+        pos = starting_pos[pos_cnt]
+        pos_cnt += 1
+        vel = (0,0)
+        tau = pos
+        radius = model.FMP_params.d/2
+        color = "#FF0000"
+        add_agent!(pos, model, vel, tau, color, :T, radius, model.space.extent, [], [], nothing, 3, nothing)
     end
 end
 
