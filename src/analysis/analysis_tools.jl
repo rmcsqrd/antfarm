@@ -58,7 +58,7 @@ function plot_reward_window(model; n=100 )
                         markersize=3,
                         markercolor="#60d9cb",
                         right_margin = 3*Plots.mm,
-                        ylabel="Training Loss",
+                        ylabel="Sum of Minibatch TD per epoch",
                    )
     Plots.plot!(p2, mid_point+1:length(loss)-mid_point, μ_loss,
                     color="#d99960",
@@ -71,7 +71,7 @@ function plot_reward_window(model; n=100 )
 #    Plots.plot!(p2,mid_point+1:length(loss)-mid_point, μ_loss- 2 .* σ_loss,
 #                label="",
 #                color="#cb60d9")
-    title!("Training Loss Over Time")
+    title!("Temporal Difference Over Time")
     xlabel!("Epoch")
     plot(p1,p2, layout=(2,1), size=(1000,1000))
     savefig(string(homedir(), "/Programming/antfarm/src/data_output/_reward.png"))

@@ -101,9 +101,9 @@ function DQN_init(sim_params)
     ϵ_factor = 1000
     ϵ(i) = maximum((0.1, (ϵ_factor-i)/ϵ_factor))
     τ_factor = 1000
-    τ(i) = maximum((0.0, (τ_factor-i)/τ_factor))
+    τ(i) = maximum((0.0, (τ_factor-i)/τ_factor))*0.85
     γ = 0.99
-    C = 500_000
+    C = 100_000
 
     DQN_params = DQN_HyperParams(K, k, N, τ, ϵ, γ, C, 0, 0)
     DQN_network = DQN_Network(Q, Q̂, opt)
