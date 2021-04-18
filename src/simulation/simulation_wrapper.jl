@@ -38,9 +38,17 @@ function model_run(;num_agents=20,
         @info "Loading previous model..."
         prev_model = BSON.load(prev_run, @__MODULE__)
         sim_params = prev_model[:sim_params]
+        sim_params.num_episodes = num_episodes
+        sim_params.sim_vid_interval = sim_vid_interval
+        sim_params.num_vid_steps = num_vid_steps
         sim_params.prev_run = prev_run
-        reward_hist = prev_model[:reward_hist]
-        loss_hist = prev_model[:loss_hist]
+
+        reward_hist = zeros(sim_params.num_episodes)
+        loss_hist = zeros(sim_params.num_episodes)
+        prev_rew_hist = prev_model[:reward_hist]
+        prev_loss_hist = prev_model[:loss_hist]
+        reward_hist[1:sim_params.episode_number] = prev_rew_hist[1:sim_params.episode_number]
+        loss_hist[1:sim_params.episode_number] = prev_loss_hist[1:sim_params.episode_number]
     else
         @info "No previous model specified, starting from scratch..."
         #state_dim = 2+2*num_goals
@@ -88,14 +96,14 @@ function model_run(;num_agents=20,
     model = fmp_model_init(dqn_params, dqn_network, buffer, sim_params)
 
     # train model
-    for episode in 1:sim_params.num_episodes  # BONE, find clever solution to this
+    for episode in model.sim_params.episode_number:model.sim_params.num_episodes  
 
         # run episode
         run_time = @elapsed reward_hist[episode], loss_hist[episode] = episode_run!(model)
 
         # write output to console
         pr(x) = round(x, digits=5)
-        println("\nEpisode #$episode of $num_episodes")
+        println("\nEpisode #$episode of $(model.sim_params.num_episodes)")
         println("Global Reward for Episode = $(pr(reward_hist[episode]))")
         println("Training Loss for Epoch   = $(pr(loss_hist[episode]))")
         println("Time Elapsed for Episode  = $(pr(run_time))")

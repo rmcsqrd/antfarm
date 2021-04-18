@@ -72,10 +72,15 @@ function DQN_buffer_update!(s_t1, a_t1, r_t, s_t, model)
 end
 
 function DQN_init(sim_params)
-    Q = Chain(
-                  Dense(sim_params.state_dim, 64, relu),
-                  Dense(64, sim_params.action_dim)
-                 )
+    if sim_params.prev_run != "none"
+        prev_model = BSON.load(sim_params.prev_run, @__MODULE__)
+        Q = prev_model[:Policy].Q
+    else
+        Q = Chain(
+                      Dense(sim_params.state_dim, 64, relu),
+                      Dense(64, sim_params.action_dim)
+                     )
+    end
     Q̂ = deepcopy(Q)
     η = 0.00001
     # note, 0.00025 and hidden layer dim = 16 work for RMSProp
@@ -100,7 +105,7 @@ function DQN_init(sim_params)
     γ = 0.99
     ϵ_factor = 1000
     ϵ(i) = maximum((0.1, (ϵ_factor-i)/ϵ_factor))
-    τ_factor = 1000
+    τ_factor = 0 #1000
     τ(i) = maximum((0.0, (τ_factor-i)/τ_factor))*0.85
     γ = 0.99
     C = 100_000
