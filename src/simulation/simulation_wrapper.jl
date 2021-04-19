@@ -52,7 +52,11 @@ function model_run(;num_agents=20,
     else
         @info "No previous model specified, starting from scratch..."
         #state_dim = 2+2*num_goals
-        state_dim = 2*(num_goals+num_agents-1)
+        if num_goals != num_agents
+            @error "num_goals must match num_agents due to assignment of goal to agent"
+            bad
+        end
+        state_dim = 2*(1+num_agents-1)
         action_dim = 0
         if num_dims == "1D"
             action_dim = 3

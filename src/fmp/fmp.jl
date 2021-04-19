@@ -9,6 +9,7 @@ mutable struct FMP_Agent <: AbstractAgent
     SSdims::NTuple{2, Float64}  ## include this for plotting
     Ni::Vector{Int64} ## array of neighboring agent IDs
     Gi::Vector{Int64} ## array of neighboring goal IDs
+    Oi::Vector{Int64} ## array of neighboring obstacle IDs
     s_t1
     a_t1
     s_t
@@ -51,7 +52,7 @@ function fmp_model_init(dqn_params, dqn_network, buffer, sim_params)
                       :sim_params=>sim_params,
                       :DQN=>dqn_network,
                       :DQN_params=>dqn_params,
-                      :buffer=>buffer
+                      :buffer=>buffer,
                      )
 
     space2d = ContinuousSpace(extents; periodic = true)  # periodic false will throw errors and my boundary enforcement is okay
@@ -129,14 +130,13 @@ end
 
 function model_step!(model)
 
-
     # do FMP stuff - figure out interacting pairs and update velocities
     # accordingly
-    fmp_update_interacting_pairs(model)
+    fmp_update_interacting_pairs!(model)
     for agent_id in keys(model.agents)
-        fmp_update_vel(model.agents[agent_id], model)
+        fmp_update_vel!(model.agents[agent_id], model)
     end
-    
+
     # do RL stuff 
     RL_Update!(model)
 

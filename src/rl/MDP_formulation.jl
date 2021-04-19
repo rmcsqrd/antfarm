@@ -50,16 +50,28 @@ function get_state(model, agent_id, i)
     s_t = []
     #push!(s_t, model.agents[agent_id].pos)
 
-    for g in keys(sort(collect(pairs(model.Goals))))
-        # figure out relative distances to goals
-        push!(s_t, model.Goals[g] .- model.agents[agent_id].pos)
-    end
+    goals = values(sort(collect(pairs(model.Goals))))
+    push!(s_t, model.Goals[i] .- model.agents[agent_id].pos)
+
+#    for g in keys(sort(collect(pairs(model.Goals))))
+#        # figure out relative distances to goals
+#        push!(s_t, model.Goals[g] .- model.agents[agent_id].pos)
+#    end
 
     # store other agent relative distances as well
     agent_keys = keys(model.agents)
     sorted_keys = sort(collect(agent_keys))
     for other_agent_id in sorted_keys
         if model.agents[other_agent_id].type == :A
+            if other_agent_id != agent_id
+                push!(s_t, model.agents[other_agent_id].pos .- model.agents[agent_id].pos)
+            end
+        end
+    end
+
+    # store obstacle relative distance
+    for other_agent_id in sorted_keys
+        if model.agents[other_agent_id].type == :O
             if other_agent_id != agent_id
                 push!(s_t, model.agents[other_agent_id].pos .- model.agents[agent_id].pos)
             end
@@ -92,19 +104,26 @@ function GlobalReward(model)
             i = model.Agents2RL[agent_id]
 
             # agent-goal interaction
-            if length(model.agents[agent_id].Gi) > 0
+#            display(i)
+#            display(model.agents[agent_id].Gi)
+            model.agents[agent_id].color = "#FF0000"
+            if !isempty(model.agents[agent_id].Gi)
                 for goal_id in model.agents[agent_id].Gi
                     rewards[i] += 1
                 end
                 model.agents[agent_id].color = "#3CB371"
             else
-                rewards[i] += -0.01*sum(1 .- model.SS.GO[i, :])
+                rewards[i] += -0.01 #*sum(1 .- model.SS.GO[i, :])
                 model.agents[agent_id].color = "#FF0000"
             end
 
             # interagent function
             for neighbor_id in model.agents[agent_id].Ni  
                 rewards[i] -= 0.1
+            end
+
+            for obstacle_id in model.agents[agent_id].Oi
+                rewards[i] -= 1
             end
         end
     end

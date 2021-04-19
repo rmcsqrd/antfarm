@@ -20,7 +20,7 @@ function LostHiker(model)
         color = "#FF0000"
 
         # seed agents with random positions initially
-        add_agent!(pos, model, vel, pos, color, :A, radius, model.space.extent, [], [], nothing, rand(1:model.sim_params.action_dim), nothing)
+        add_agent!(pos, model, vel, pos, color, :A, radius, model.space.extent, [], [], [], nothing, rand(1:model.sim_params.action_dim), nothing)
     end
 
     for i in 1:model.num_goals
@@ -30,7 +30,7 @@ function LostHiker(model)
         tau = pos
         radius = model.FMP_params.d/2
         color = "#FF0000"
-        add_agent!(pos, model, vel, tau, color, :T, radius, model.space.extent, [], [], nothing, rand(1:model.sim_params.action_dim), nothing)
+        add_agent!(pos, model, vel, tau, color, :T, radius, model.space.extent, [], [], [], nothing, rand(1:model.sim_params.action_dim), nothing)
     end
 end
 
@@ -51,7 +51,7 @@ function SimpleTest(model)
             color = "#FF0000"
         end
         # seed agents with random positions initially
-        add_agent!(pos, model, vel, pos, color, :A, radius, model.space.extent, [], [],
+        add_agent!(pos, model, vel, pos, color, :A, radius, model.space.extent, [], [], [],
                    nothing, 3, nothing)
 
     end
@@ -69,7 +69,7 @@ function SimpleTest(model)
         end
 
         # add targets normally
-        add_agent!(tau, model, vel, tau, color, :T, radius, model.space.extent, [], [], 
+        add_agent!(tau, model, vel, tau, color, :T, radius, model.space.extent, [], [], [],
                    nothing, 3, nothing)
     end
 end
