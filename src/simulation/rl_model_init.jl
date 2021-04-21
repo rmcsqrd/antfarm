@@ -34,6 +34,59 @@ function LostHiker(model)
     end
 end
 
+function LostHikerObstacle(model)
+
+    # determine circle params
+    absx, absy = model.space.extent
+    x, y = (absx, absy) .* 0.9 # also add scale factor so it doesn't end up outside of space
+    #generate starting position
+    positions = [(i,j) for i in 0.1:0.05:x, j in 0.1:0.05:y]
+    starting_pos = sample(positions, model.num_agents+model.num_goals+model.num_obstacles, replace=false)
+    pos_cnt = 1
+
+    # add some noise to positions because I was getting error for having agents in same position
+
+    for i in 1:model.num_agents
+        # set agent params
+        pos = starting_pos[pos_cnt]
+        pos_cnt += 1
+        vel = (0,0)
+        tau = pos
+        radius = model.FMP_params.d/2
+        color = "#FF0000"
+
+        # seed agents with random positions initially
+        add_agent!(pos, model, vel, pos, color, :A, radius, model.space.extent, [], [], [], nothing, rand(1:model.sim_params.action_dim), nothing)
+    end
+
+    for i in 1:model.num_goals
+        pos = starting_pos[pos_cnt]
+        pos_cnt += 1
+        vel = (0,0)
+        tau = pos
+        radius = model.FMP_params.d/2
+        color = "#FF0000"
+        add_agent!(pos, model, vel, tau, color, :T, radius, model.space.extent, [], [], [], nothing, rand(1:model.sim_params.action_dim), nothing)
+    end
+
+    for i in 1:model.num_obstacles
+        pos = starting_pos[pos_cnt]
+        pos_cnt += 1
+        vel = (0,0)
+        tau = pos
+        radius = model.FMP_params.d
+        color = "#5F9EA0"
+        add_agent!(pos, model, vel, pos, color, :O, radius, model.space.extent, [], [], [], nothing, rand(1:model.sim_params.action_dim), nothing)
+    end
+
+    model.FMP_params.obstacle_list = []
+    for agent in allagents(model)
+        if agent.type == :O
+            append!(model.FMP_params.obstacle_list, agent.id)
+        end
+end
+end
+
 function SimpleTest(model)
     x,y = model.space.extent
     #starting_pos = (rand(0.2:0.05:x*0.8), rand(0.2:0.05:y*0.8))

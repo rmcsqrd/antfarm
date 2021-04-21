@@ -72,9 +72,7 @@ function get_state(model, agent_id, i)
     # store obstacle relative distance
     for other_agent_id in sorted_keys
         if model.agents[other_agent_id].type == :O
-            if other_agent_id != agent_id
-                push!(s_t, model.agents[other_agent_id].pos .- model.agents[agent_id].pos)
-            end
+            push!(s_t, model.agents[other_agent_id].pos .- model.agents[agent_id].pos)
         end
     end
 
@@ -114,7 +112,6 @@ function GlobalReward(model)
                 model.agents[agent_id].color = "#3CB371"
             else
                 rewards[i] += -0.01 #*sum(1 .- model.SS.GO[i, :])
-                model.agents[agent_id].color = "#FF0000"
             end
 
             # interagent function
@@ -122,7 +119,9 @@ function GlobalReward(model)
                 rewards[i] -= 0.1
             end
 
+            # agent/obstacle bumps
             for obstacle_id in model.agents[agent_id].Oi
+                model.agents[agent_id].color = "#FF33FF"
                 rewards[i] -= 1
             end
         end

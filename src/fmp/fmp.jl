@@ -39,6 +39,7 @@ function fmp_model_init(dqn_params, dqn_network, buffer, sim_params)
                       :dt => sim_params.dt_sim,
                       :num_agents=>sim_params.num_agents,
                       :num_goals=>sim_params.num_goals,
+                      :num_obstacles=>sim_params.num_obstacles,
                       :num_steps=>sim_params.num_steps,
                       :step_inc=>1,
                       :SS=>StateSpace(  #GA, GO
@@ -69,6 +70,8 @@ function fmp_model_add_agents!(model)
     # initialize model by adding in agents
     if model.sim_params.sim_type == "lost_hiker"
         LostHiker(model)
+    elseif model.sim_params.sim_type == "lost_hiker_obstacle"
+        LostHikerObstacle(model)
     elseif model.sim_params.sim_type == "simple_test"
         SimpleTest(model)
     elseif model.sim_params.sim_type == "multi_test"

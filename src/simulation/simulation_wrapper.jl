@@ -3,6 +3,7 @@ export model_run
 mutable struct SimulationParams
     num_agents::Int64          # number of agents in simulation
     num_goals::Int64           # number of goals
+    num_obstacles::Int64       # number of obstacles
     num_steps::Int64           # number of steps per episode
     num_vid_steps::Int64
     num_episodes::Int64        # number of episodes per simulation
@@ -21,6 +22,7 @@ end
 
 function model_run(;num_agents=20,
                     num_goals = 20,
+                    num_obstacles = 0,
                     num_steps = 10000,     # number of steps per episode (epoch)
                     num_vid_steps = 2500,
                     num_episodes = 10001, # number of episodes (epochs)
@@ -56,7 +58,8 @@ function model_run(;num_agents=20,
             @error "num_goals must match num_agents due to assignment of goal to agent"
             bad
         end
-        state_dim = 2*(1+num_agents-1)
+        # x, y coords for assigned goal, all obstacles, num_agents-self
+        state_dim = 2*(1+num_agents+num_obstacles-1) 
         action_dim = 0
         if num_dims == "1D"
             action_dim = 3
@@ -68,6 +71,7 @@ function model_run(;num_agents=20,
 
         sim_params = SimulationParams(num_agents,
                                   num_goals,
+                                  num_obstacles,
                                   num_steps,
                                   num_vid_steps,
                                   num_episodes,

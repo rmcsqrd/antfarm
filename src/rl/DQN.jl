@@ -34,6 +34,7 @@ function DQN_train!(model)
     end
 
     data = rand(model.buffer.H, model.DQN_params.k)
+    #push!(data, model.buffer.H[length(model.buffer.H)])  # BONE, push last state for combined experience replay
     Flux.train!(DQN_loss, params(model.DQN.Q), data, model.DQN.opt)
     model.DQN_params.ep_loss += training_loss
 
