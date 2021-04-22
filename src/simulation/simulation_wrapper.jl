@@ -59,7 +59,7 @@ function model_run(;num_agents=20,
             bad
         end
         # x, y coords for assigned goal, all obstacles, num_agents-self
-        state_dim = 2*(1+num_agents+num_obstacles-1) 
+        state_dim = 2*(1+num_obstacles) 
         action_dim = 0
         if num_dims == "1D"
             action_dim = 3

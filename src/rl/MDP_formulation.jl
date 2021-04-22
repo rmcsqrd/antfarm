@@ -58,13 +58,13 @@ function get_state(model, agent_id, i)
     # store other agent relative distances as well
     agent_keys = keys(model.agents)
     sorted_keys = sort(collect(agent_keys))
-    for other_agent_id in sorted_keys
-        if model.agents[other_agent_id].type == :A
-            if other_agent_id != agent_id
-                push!(s_t, model.agents[other_agent_id].pos .- model.agents[agent_id].pos)
-            end
-        end
-    end
+#    for other_agent_id in sorted_keys
+#        if model.agents[other_agent_id].type == :A
+#            if other_agent_id != agent_id
+#                push!(s_t, model.agents[other_agent_id].pos .- model.agents[agent_id].pos)
+#            end
+#        end
+#    end
 
     # store obstacle relative distance
     for other_agent_id in sorted_keys
@@ -121,13 +121,13 @@ function get_reward(model, agent_id, i, s_t)
     end
 
     # interagent function
-    for neighbor_id in model.agents[agent_id].Ni  
-        rewards -= 0.1
-    end
+#    for neighbor_id in model.agents[agent_id].Ni  
+#        rewards -= 0.1
+#    end
 
     # agent/obstacle bumps
     for obstacle_id in model.agents[agent_id].Oi
-        model.agents[agent_id].color = "#FF33FF"
+        model.agents[agent_id].color = "#0000FF"
         rewards -= 1
     end
     return rewards

@@ -74,7 +74,7 @@ function LostHikerObstacle(model)
         pos_cnt += 1
         vel = (0,0)
         tau = pos
-        radius = model.FMP_params.d
+        radius = model.FMP_params.d*2
         color = "#5F9EA0"
         add_agent!(pos, model, vel, pos, color, :O, radius, model.space.extent, [], [], [], nothing, rand(1:model.sim_params.action_dim), nothing)
     end
