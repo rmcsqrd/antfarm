@@ -104,9 +104,9 @@ function DQN_init(sim_params)
     k = 32
     N = 1_000_000
     γ = 0.99
-    ϵ_factor = 1000
+    ϵ_factor = 5000
     ϵ(i) = maximum((0.1, (ϵ_factor-i)/ϵ_factor))
-    τ_factor = 1000
+    τ_factor = 5000
     τ(i) = maximum((0.0, (τ_factor-i)/τ_factor))*0.85
     γ = 0.99
     C = 100_000

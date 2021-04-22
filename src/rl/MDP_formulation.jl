@@ -9,9 +9,6 @@ end
 function RL_Update!(model)
     # update global state (goal awareness/goal occupation)
     GlobalStateTransition!(model)
-    
-    # compute rewards
-    rewards = GlobalReward(model)
 
     # next, do individual agent actions
     goal_loc_array = sort(collect(values(model.Goals)))
@@ -23,7 +20,7 @@ function RL_Update!(model)
             # get model state from agent and  push transition into replay buffer
             a_t1 = model.agents[agent_id].a_t1
             s_t1, s_t = get_state(model, agent_id, i)
-            r_t = rewards[i]
+            r_t = get_reward(model, agent_id, i, s_t)
 
             DQN_buffer_update!(s_t1, a_t1, r_t, s_t, model)
 
@@ -93,38 +90,45 @@ end
 function GlobalStateTransition!(model)
 end
 
-function GlobalReward(model)
+function get_reward(model, agent_id, i, s_t)
 
-    # compute team performance scaling factors
-    rewards = zeros(Float64, model.num_agents)
-    for agent_id in keys(model.agents)
-        if model.agents[agent_id].type == :A
-            i = model.Agents2RL[agent_id]
+    rewards = 0
 
-            # agent-goal interaction
+    # agent-goal interaction
 #            display(i)
 #            display(model.agents[agent_id].Gi)
-            model.agents[agent_id].color = "#FF0000"
-            if !isempty(model.agents[agent_id].Gi)
-                for goal_id in model.agents[agent_id].Gi
-                    rewards[i] += 1
-                end
-                model.agents[agent_id].color = "#3CB371"
-            else
-                rewards[i] += -0.01 #*sum(1 .- model.SS.GO[i, :])
-            end
+    model.agents[agent_id].color = "#FF0000"
 
-            # interagent function
-            for neighbor_id in model.agents[agent_id].Ni  
-                rewards[i] -= 0.1
-            end
+    # give proportional reward for goal proximity
+    # first two state positions are relative distances to goal
+    x, y = model.space.extent
+    max_dist = √(x^2+y^2)
+    ag_offset_x = s_t[1]
+    ag_offset_y = s_t[2]
+    agent_goal_dist = √(ag_offset_x^2+ag_offset_y^2)
+    offset_ratio = agent_goal_dist/max_dist
+    rewards += 0.001*(1-offset_ratio)
+    
 
-            # agent/obstacle bumps
-            for obstacle_id in model.agents[agent_id].Oi
-                model.agents[agent_id].color = "#FF33FF"
-                rewards[i] -= 1
-            end
+    # give large reward for goal occupation
+    if !isempty(model.agents[agent_id].Gi)
+        for goal_id in model.agents[agent_id].Gi
+            rewards += 1
         end
+        model.agents[agent_id].color = "#3CB371"
+    else
+        rewards += -0.01 #*sum(1 .- model.SS.GO[i, :])
+    end
+
+    # interagent function
+    for neighbor_id in model.agents[agent_id].Ni  
+        rewards -= 0.1
+    end
+
+    # agent/obstacle bumps
+    for obstacle_id in model.agents[agent_id].Oi
+        model.agents[agent_id].color = "#FF33FF"
+        rewards -= 1
     end
     return rewards
 end
