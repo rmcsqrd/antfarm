@@ -1,17 +1,6 @@
-mutable struct StateSpace
-    # Goal awareness vector for agent
-    # GA(i, g) = agent i is interacting with goal g
-    GA::Array{Bool,2} 
-
-    GO::Array{Bool,2}
-end
-
 function RL_Update!(model)
-    # update global state (goal awareness/goal occupation)
-    GlobalStateTransition!(model)
 
     # next, do individual agent actions
-    goal_loc_array = sort(collect(values(model.Goals)))
     for agent_id in keys(model.agents)
 
         if model.agents[agent_id].type == :A
@@ -29,7 +18,7 @@ function RL_Update!(model)
             model.agents[agent_id].a_t1 = a_t
 
             # update agent with action
-            model.agents[agent_id].tau = model.agents[agent_id].pos .+ model.action_dict[a_t1]
+            model.agents[agent_id].tau = model.agents[agent_id].pos .+ model.action_dict[a_t]
             
             # update episode reward
             model.DQN_params.ep_rew += r_t
@@ -45,36 +34,19 @@ function get_state(model, agent_id, i)
 
     # compute relative distances
     s_t = []
-    #push!(s_t, model.agents[agent_id].pos)
 
+    # give agent position of assigned goal
     goals = values(sort(collect(pairs(model.Goals))))
     push!(s_t, model.Goals[i] .- model.agents[agent_id].pos)
 
-#    for g in keys(sort(collect(pairs(model.Goals))))
-#        # figure out relative distances to goals
-#        push!(s_t, model.Goals[g] .- model.agents[agent_id].pos)
-#    end
-
-    # store other agent relative distances as well
+    # store obstacle relative distance
     agent_keys = keys(model.agents)
     sorted_keys = sort(collect(agent_keys))
-#    for other_agent_id in sorted_keys
-#        if model.agents[other_agent_id].type == :A
-#            if other_agent_id != agent_id
-#                push!(s_t, model.agents[other_agent_id].pos .- model.agents[agent_id].pos)
-#            end
-#        end
-#    end
-
-    # store obstacle relative distance
     for other_agent_id in sorted_keys
         if model.agents[other_agent_id].type == :O
             push!(s_t, model.agents[other_agent_id].pos .- model.agents[agent_id].pos)
         end
     end
-
-    # NOTE: just keep pushing into s_t for state
-
 
     # finally, flatten into a vector and return the state
     s_t = collect(Iterators.flatten(s_t))
@@ -87,16 +59,11 @@ function get_state(model, agent_id, i)
     return s_t1, s_t
 end
 
-function GlobalStateTransition!(model)
-end
-
 function get_reward(model, agent_id, i, s_t)
 
     rewards = 0
 
     # agent-goal interaction
-#            display(i)
-#            display(model.agents[agent_id].Gi)
     model.agents[agent_id].color = "#FF0000"
 
     # give proportional reward for goal proximity
@@ -116,19 +83,12 @@ function get_reward(model, agent_id, i, s_t)
             rewards += 1
         end
         model.agents[agent_id].color = "#3CB371"
-    else
-        rewards += -0.01 #*sum(1 .- model.SS.GO[i, :])
     end
-
-    # interagent function
-#    for neighbor_id in model.agents[agent_id].Ni  
-#        rewards -= 0.1
-#    end
 
     # agent/obstacle bumps
     for obstacle_id in model.agents[agent_id].Oi
         model.agents[agent_id].color = "#0000FF"
-        rewards -= 1
+        rewards -= 0.01
     end
     return rewards
 end

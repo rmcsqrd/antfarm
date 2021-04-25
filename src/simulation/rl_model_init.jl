@@ -40,7 +40,7 @@ function LostHikerObstacle(model)
     absx, absy = model.space.extent
     x, y = (absx, absy) .* 0.9 # also add scale factor so it doesn't end up outside of space
     #generate starting position
-    positions = [(i,j) for i in 0.1:0.05:x, j in 0.1:0.05:y]
+    positions = [(i,j) for i in 0.1:0.1:x, j in 0.1:0.1:y]
     starting_pos = sample(positions, model.num_agents+model.num_goals+model.num_obstacles, replace=false)
     pos_cnt = 1
 
@@ -74,7 +74,7 @@ function LostHikerObstacle(model)
         pos_cnt += 1
         vel = (0,0)
         tau = pos
-        radius = model.FMP_params.d*2
+        radius = model.FMP_params.d*2.5
         color = "#5F9EA0"
         add_agent!(pos, model, vel, pos, color, :O, radius, model.space.extent, [], [], [], nothing, rand(1:model.sim_params.action_dim), nothing)
     end

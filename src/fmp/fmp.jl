@@ -42,10 +42,6 @@ function fmp_model_init(dqn_params, dqn_network, buffer, sim_params)
                       :num_obstacles=>sim_params.num_obstacles,
                       :num_steps=>sim_params.num_steps,
                       :step_inc=>1,
-                      :SS=>StateSpace(  #GA, GO
-                           zeros(Bool, sim_params.num_agents, sim_params.num_goals),
-                           zeros(Bool, sim_params.num_agents, sim_params.num_goals),
-                                     ),
                       :action_dict=>action_dict,
                       :Agents2RL=>Dict{Int64, Int64}(),  # dict to map Agents.jl agent_ids to RL formulation id values
                       :Goals=>Dict{Int64, Tuple{Float64, Float64}}(),  # dict to map RL formulation goal id's to position of Agents.jl goal (agent.type == :T)
@@ -111,8 +107,6 @@ function fmp_model_reset!(model)
     model.Agents2RL = Dict{Int64, Int64}()
     model.Goals = Dict{Int64, Tuple{Float64, Float64}}()
     model.t = 1
-    model.SS.GO = zeros(Bool, model.num_agents, model.num_goals)
-    model.SS.GA = zeros(Bool, model.num_agents, model.num_goals)
 
     # finally, re-add in agents
     fmp_model_add_agents!(model)
@@ -125,7 +119,7 @@ function agent_step!(agent, model)
     # check model extents to respect boundary
     px, py = agent.pos .+ model.dt .* agent.vel
     ex, ey = model.space.extent
-    if !(0.05 ≤ px ≤ ex-0.05 && 0.05 ≤ py ≤ ey-0.05)
+    if !(0 ≤ px ≤ ex && 0 ≤ py ≤ ey)
         agent.vel = (0.0, 0.0)
     end
     move_agent!(agent, model, model.dt)
