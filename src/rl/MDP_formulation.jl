@@ -74,7 +74,7 @@ function get_reward(model, agent_id, i, s_t)
     ag_offset_y = s_t[2]
     agent_goal_dist = √(ag_offset_x^2+ag_offset_y^2)
     offset_ratio = agent_goal_dist/max_dist
-    rewards += 0.001*(1-offset_ratio)
+    rewards += 0.01*(1-offset_ratio)
     
 
     # give large reward for goal occupation
