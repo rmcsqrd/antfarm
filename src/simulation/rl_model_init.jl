@@ -84,7 +84,7 @@ function LostHikerObstacle(model)
         if agent.type == :O
             append!(model.FMP_params.obstacle_list, agent.id)
         end
-end
+    end
 end
 
 function SimpleTest(model)
@@ -166,3 +166,44 @@ function SimpleMultiTest(model)
                    tau_list[i], 3, tau_list[i])
     end
 end
+
+
+function ObstacleSideBySide(model)
+
+    # determine circle params
+    absx, absy = model.space.extent
+    x, y = (absx, absy) .* 0.9 # also add scale factor so it doesn't end up outside of space
+    #generate starting position
+
+    pos = (0.5*x, 0.2*y)
+    vel = (0,0)
+    tau = pos
+    radius = model.FMP_params.d/2
+    color = "#FF0000"
+
+    # seed agents with random positions initially
+    add_agent!(pos, model, vel, pos, color, :A, radius, model.space.extent, [], [], [], nothing, rand(1:model.sim_params.action_dim), nothing)
+
+    pos = (0.5*x, 0.8*y)
+    vel = (0,0)
+    tau = pos
+    radius = model.FMP_params.d/2
+    color = "#FF0000"
+    add_agent!(pos, model, vel, tau, color, :T, radius, model.space.extent, [], [], [], nothing, rand(1:model.sim_params.action_dim), nothing)
+
+    vel = (0,0)
+    pos1 = (0.4*x, 0.5*y)
+    pos2 = (0.6*x, 0.5*y)
+    radius = model.FMP_params.d*2.5
+    color = "#5F9EA0"
+    add_agent!(pos1, model, vel, pos1, color, :O, radius, model.space.extent, [], [], [], nothing, rand(1:model.sim_params.action_dim), nothing)
+    add_agent!(pos2, model, vel, pos2, color, :O, radius, model.space.extent, [], [], [], nothing, rand(1:model.sim_params.action_dim), nothing)
+
+    model.FMP_params.obstacle_list = []
+    for agent in allagents(model)
+        if agent.type == :O
+            append!(model.FMP_params.obstacle_list, agent.id)
+        end
+    end
+end
+

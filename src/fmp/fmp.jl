@@ -72,6 +72,8 @@ function fmp_model_add_agents!(model)
         SimpleTest(model)
     elseif model.sim_params.sim_type == "multi_test"
         SimpleMultiTest(model)
+    elseif model.sim_params.sim_type == "side_by_side_obstacle"
+        ObstacleSideBySide(model)
     else
         @error "Simulation type not defined"
     end
