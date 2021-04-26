@@ -18,7 +18,7 @@ function RL_Update!(model)
             model.agents[agent_id].a_t1 = a_t
 
             # update agent with action
-            model.agents[agent_id].tau = model.agents[agent_id].pos .+ model.action_dict[a_t]
+            model.agents[agent_id].tau = model.agents[agent_id].pos .+ model.action_dict[a_t] 
             
             # update episode reward
             model.DQN_params.ep_rew += r_t
@@ -74,13 +74,13 @@ function get_reward(model, agent_id, i, s_t)
     ag_offset_y = s_t[2]
     agent_goal_dist = √(ag_offset_x^2+ag_offset_y^2)
     offset_ratio = agent_goal_dist/max_dist
-    rewards += 0.001*(1-offset_ratio)
+    rewards += 0.0001*(1-offset_ratio)
     
 
     # give large reward for goal occupation
     if !isempty(model.agents[agent_id].Gi)
         for goal_id in model.agents[agent_id].Gi
-            rewards += 1
+            rewards += 0.01
         end
         model.agents[agent_id].color = "#3CB371"
     end
@@ -90,7 +90,6 @@ function get_reward(model, agent_id, i, s_t)
         model.agents[agent_id].color = "#0000FF"
         rewards -= 0.01
     end
-    rewards = clamp(rewards, -1.0, 1.0)
     return rewards
 end
 

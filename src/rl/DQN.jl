@@ -83,7 +83,7 @@ function DQN_init(sim_params)
                      )
     end
     Q̂ = deepcopy(Q)
-    η = 0.00001
+    η = 0.00000001
     # note, 0.00025 and hidden layer dim = 16 work for RMSProp
     #η = 0.00025
     opt = Flux.Optimise.Optimiser(ClipValue(1), RMSProp(η))
