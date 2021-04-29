@@ -35,18 +35,21 @@ function get_state(model, agent_id, i)
     # compute relative distances
     s_t = []
 
-    # give agent position of assigned goal
-    goals = values(sort(collect(pairs(model.Goals))))
-    push!(s_t, model.Goals[i] .- model.agents[agent_id].pos)
+    push!(s_t, model.agents[agent_id].pos)  # BONE
 
-    # store obstacle relative distance
-    agent_keys = keys(model.agents)
-    sorted_keys = sort(collect(agent_keys))
-    for other_agent_id in sorted_keys
-        if model.agents[other_agent_id].type == :O
-            push!(s_t, model.agents[other_agent_id].pos .- model.agents[agent_id].pos)
-        end
-    end
+    # give agent position of assigned goal
+#    goals = values(sort(collect(pairs(model.Goals))))
+#    #push!(s_t, model.Goals[i] .- model.agents[agent_id].pos)
+#    #push!(s_t, model.Goals[i])  # BONE
+#
+#    # store obstacle relative distance
+#    agent_keys = keys(model.agents)
+#    sorted_keys = sort(collect(agent_keys))
+#    for other_agent_id in sorted_keys
+#        if model.agents[other_agent_id].type == :O
+#            #push!(s_t, model.agents[other_agent_id].pos)  # BONE
+#        end
+#    end
 
     # finally, flatten into a vector and return the state
     s_t = collect(Iterators.flatten(s_t))
@@ -70,25 +73,25 @@ function get_reward(model, agent_id, i, s_t)
     # first two state positions are relative distances to goal
     x, y = model.space.extent
     max_dist = √(x^2+y^2)
-    ag_offset_x = s_t[1]
-    ag_offset_y = s_t[2]
+    ag_offset_x = model.Goals[i][1] - s_t[1]
+    ag_offset_y = model.Goals[i][2] - s_t[2]
     agent_goal_dist = √(ag_offset_x^2+ag_offset_y^2)
     offset_ratio = agent_goal_dist/max_dist
-    rewards += 0.0001*(1-offset_ratio)
+    rewards += 0.005*(1-offset_ratio)^2
     
 
     # give large reward for goal occupation
     if !isempty(model.agents[agent_id].Gi)
-        for goal_id in model.agents[agent_id].Gi
-            rewards += 0.01
-        end
+#        for goal_id in model.agents[agent_id].Gi
+#            #rewards += 0.5
+#        end
         model.agents[agent_id].color = "#3CB371"
     end
 
     # agent/obstacle bumps
     for obstacle_id in model.agents[agent_id].Oi
         model.agents[agent_id].color = "#0000FF"
-        rewards -= 0.01
+        #rewards -= 0.05
     end
     return rewards
 end

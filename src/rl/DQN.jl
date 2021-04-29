@@ -78,15 +78,16 @@ function DQN_init(sim_params)
         Q = prev_model[:Policy].Q
     else
         Q = Chain(
-                      Dense(sim_params.state_dim, 64, relu),
-                      Dense(64, sim_params.action_dim)
+                      Dense(sim_params.state_dim, 16, relu),
+                      Dense(16, sim_params.action_dim)
                      )
     end
     Q̂ = deepcopy(Q)
-    η = 0.00000001
+    η = 0.01
     # note, 0.00025 and hidden layer dim = 16 work for RMSProp
     #η = 0.00025
-    opt = Flux.Optimise.Optimiser(ClipValue(1), RMSProp(η))
+    #opt = Flux.Optimise.Optimiser(ClipValue(1), RMSProp(η))
+    opt = RMSProp(η)
     #opt = Flux.Optimise.Optimiser(ClipValue(10), RMSProp(η))
     #opt = ADAM(η)
 
@@ -106,7 +107,7 @@ function DQN_init(sim_params)
     γ = 0.99
     ϵ_factor = 1000
     ϵ(i) = maximum((0.1, (ϵ_factor-i)/ϵ_factor))
-    τ_factor = 1000
+    τ_factor = 0 #2000
     τ(i) = maximum((0.0, (τ_factor-i)/τ_factor))*0.85
     γ = 0.99
     C = 100_000
