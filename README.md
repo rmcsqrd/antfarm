@@ -13,4 +13,7 @@ Force-based motion planning algorithm with RL navigational feedback. Implementat
     $ julia> using antfarm
     $ julia> antfarm.[command]()  // this is how it works
 ```
-
+## Note on Branches
+- Master: Old Version
+- CSCI 5454: Algorithm version for CSCI 5454 Class
+- RL-cpu: Thesis Version
